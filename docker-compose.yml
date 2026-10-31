@@ -1,0 +1,97 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: shuleconnect-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-shuleconnect_db}
+      POSTGRES_USER: ${DB_USER:-shuleconnect_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-shuleconnectPASS}
+    ports:
+      # Use port 5433 on host when running in containers to avoid colliding with local Fedora PostgreSQL 18 on 5432
+      - "${DOCKER_PG_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-shuleconnect_user} -d ${DB_NAME:-shuleconnect_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: shuleconnect-redis
+    restart: unless-stopped
+    ports:
+      # Port 6380 on host to avoid colliding with local Redis on 6379
+      - "${DOCKER_REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: shuleconnect-backend-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: shuleconnect-celery-worker
+    command: ["celery", "-A", "app.workers.celery_app.celery", "worker", "--loglevel=info"]
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      backend-api:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: shuleconnect-celery-beat
+    command: ["celery", "-A", "app.workers.celery_app.celery", "beat", "--loglevel=info"]
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      backend-api:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: shuleconnect-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend-api
+
+volumes:
+  postgres_data:
+  redis_data:

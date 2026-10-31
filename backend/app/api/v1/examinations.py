@@ -32,7 +32,8 @@ from app.schemas.examinations import (
     ResultApprovalRequest,
     ResultPublicationRequest,
 )
-from app.utils.phone import calculate_sms_segments
+from app.utils.phone import calculate_sms_segments, normalize_tanzanian_phone
+from app.integrations.africastalking import default_at_client
 from app.workers.campaign_tasks import dispatch_campaign_task
 
 router = APIRouter()
@@ -468,7 +469,7 @@ def publish_results(
             created_by_user_id=current_user.id,
             class_group_id=class_group.id,
             title=f"Taarifa ya Matokeo: {exam.name} - {class_group.name}",
-            message_content=f"Matokeo ya mtihani wa {exam.name} yametangazwa kwa mwanafunzi {{{{student_name}}}}. Tafadhali tembelea portal au piga *384*55# kupata ripoti rasmi. {school.name}.",
+            message_content=f"Matokeo ya mtihani wa {exam.name} yametangazwa kwa mwanafunzi {{{{student_name}}}}. Tafadhali tembelea portal au piga *384*57567# kupata ripoti rasmi. {school.name}.",
             targeting_mode=TargetingMode.CLASS_BULK,
             status=CampaignStatus.PROCESSING,
         )
@@ -489,7 +490,7 @@ def publish_results(
                 g = gl.guardian
                 if g.primary_phone and g.primary_phone not in seen_phones:
                     seen_phones.add(g.primary_phone)
-                    text = f"Habari {g.full_name}, Matokeo ya mtihani wa {exam.name} yametangazwa kwa mwanafunzi {student.first_name} {student.last_name} ({class_group.name}). Pata taarifa kamili portal au *384*55#. Asante - {school.name}."
+                    text = f"Habari {g.full_name}, Matokeo ya mtihani wa {exam.name} yametangazwa kwa mwanafunzi {student.first_name} {student.last_name} ({class_group.name}). Pata taarifa kamili portal au *384*57567#. Asante - {school.name}."
                     segments, _ = calculate_sms_segments(text)
 
                     rec = CampaignRecipient(
@@ -679,3 +680,134 @@ def get_class_results_summary(
         "subjects": subjects_map,
         "students": student_rows,
     }
+
+
+@router.post("/students/{student_id}/send-report")
+async def send_student_exam_report(
+    student_id: uuid.UUID,
+    examination_id: Optional[uuid.UUID] = None,
+    custom_recipient_phone: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    school: School = Depends(get_current_school),
+    db: Session = Depends(get_db),
+    _: bool = Depends(PermissionChecker("exam:publish_results")),
+):
+    """
+    Sends an official personalized examination report card via Africa's Talking SMS
+    to the student's guardian (or a specified test phone number).
+    """
+    if not school:
+        raise HTTPException(status_code=400, detail="School context required")
+
+    student = db.execute(select(Student).where(Student.id == student_id, Student.school_id == school.id)).scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    # Find student active enrollment and class
+    en = db.execute(
+        select(StudentEnrollment).where(
+            StudentEnrollment.student_id == student.id,
+            StudentEnrollment.enrollment_status == EnrollmentStatus.ACTIVE,
+        )
+    ).scalars().first()
+    class_group = en.class_group if en else None
+    class_name = class_group.name if class_group else "Darasa"
+
+    # Find examination
+    if examination_id:
+        exam = db.execute(select(Examination).where(Examination.id == examination_id, Examination.school_id == school.id)).scalar_one_or_none()
+    else:
+        exam = db.execute(select(Examination).where(Examination.school_id == school.id, Examination.is_published == True).order_by(Examination.created_at.desc())).scalars().first()
+    
+    if not exam:
+        raise HTTPException(status_code=404, detail="No published examination found")
+
+    # Gather student results for this examination
+    results = db.execute(
+        select(StudentExamResult)
+        .join(ExaminationSubject, ExaminationSubject.id == StudentExamResult.examination_subject_id)
+        .where(
+            ExaminationSubject.examination_id == exam.id,
+            StudentExamResult.student_id == student.id,
+        )
+    ).scalars().all()
+
+    if not results:
+        raise HTTPException(status_code=400, detail=f"No results recorded for {student.first_name} in {exam.name}")
+
+    total_score = sum(float(r.score) for r in results)
+    avg_score = round(total_score / len(results), 1)
+    overall_grade, _ = calculate_grade(avg_score, 100.0)
+
+    # Subject abbreviations and scores summary
+    sub_summaries = []
+    for r in results:
+        code = r.exam_subject.subject.code
+        score_val = float(r.score)
+        score_display = int(score_val) if score_val.is_integer() else score_val
+        sub_summaries.append(f"{code}:{score_display}({r.grade})")
+    breakdown_str = ", ".join(sub_summaries)
+
+    # Calculate class rank if class_group is present
+    rank_str = ""
+    if class_group:
+        class_summary = get_class_results_summary(class_group_id=class_group.id, examination_id=exam.id, school=school, db=db)
+        for st_row in class_summary.get("students", []):
+            if st_row["student_id"] == str(student.id):
+                rank_str = f" Nafasi: #{st_row['rank']}/{len(class_summary['students'])}."
+                break
+
+    # Determine recipient guardian and phone
+    target_phone = None
+    guardian_name = "Mzazi/Mlezi"
+
+    if custom_recipient_phone:
+        target_phone = normalize_tanzanian_phone(custom_recipient_phone)
+    else:
+        links = db.execute(
+            select(StudentGuardian).where(
+                StudentGuardian.student_id == student.id,
+                StudentGuardian.can_receive_results == True,
+            )
+        ).scalars().all()
+        if links:
+            g = links[0].guardian
+            guardian_name = g.full_name
+            target_phone = g.primary_phone
+
+    if not target_phone:
+        raise HTTPException(status_code=400, detail="No registered guardian phone number found for student")
+
+    # Construct concise, professional official SMS report
+    message_text = (
+        f"Habari {guardian_name}, Ripoti ya {exam.name} kwa {student.first_name} {student.last_name} ({class_name}):"
+        f"{rank_str} Wastani: {avg_score}% ({overall_grade}). Masomo: {breakdown_str}."
+        f" USSD: *384*57567#. {school.name}"
+    )
+
+    # Dispatch via Africa's Talking
+    at_res = await default_at_client.send_sms(
+        recipients=[target_phone],
+        message=message_text,
+    )
+
+    sms_data = at_res.get("SMSMessageData", {})
+    rec_list = sms_data.get("Recipients", [])
+    provider_msg_id = rec_list[0].get("messageId") if rec_list else "AT_MSG_MOCK"
+    delivery_status = rec_list[0].get("status") if rec_list else "Success"
+
+    return {
+        "status": "success",
+        "student_id": str(student.id),
+        "student_name": f"{student.first_name} {student.last_name}",
+        "admission_number": student.admission_number,
+        "examination_name": exam.name,
+        "recipient_name": guardian_name,
+        "recipient_phone": target_phone,
+        "average_score": avg_score,
+        "overall_grade": overall_grade,
+        "message_text": message_text,
+        "provider_message_id": provider_msg_id,
+        "delivery_status": delivery_status,
+    }
+

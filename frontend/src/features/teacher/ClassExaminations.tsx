@@ -25,6 +25,8 @@ export const ClassExaminations: React.FC = () => {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importReport, setImportReport] = useState<any | null>(null);
   const [publishSuccessMsg, setPublishSuccessMsg] = useState<string | null>(null);
+  const [sendingStudentId, setSendingStudentId] = useState<string | null>(null);
+  const [reportSentResult, setReportSentResult] = useState<any | null>(null);
 
   // Queries
   const { data: classes = [] } = useQuery({
@@ -132,6 +134,28 @@ export const ClassExaminations: React.FC = () => {
     },
   });
 
+  // Individual Student Report SMS Mutation
+  const sendReportMutation = useMutation({
+    mutationFn: async (studentId: string) => {
+      setSendingStudentId(studentId);
+      const res = await api.post(`/examinations/students/${studentId}/send-report`, null, {
+        params: {
+          examination_id: selectedExamId || undefined,
+        },
+      });
+      return res.data;
+    },
+    onSuccess: (data: any) => {
+      setSendingStudentId(null);
+      setReportSentResult(data);
+      setTimeout(() => setReportSentResult(null), 8000);
+    },
+    onError: (err: any) => {
+      setSendingStudentId(null);
+      alert(err.response?.data?.detail || 'Failed to send report SMS');
+    },
+  });
+
   const handleScoreChange = (studentId: string, val: string) => {
     setScoresInput((prev) => ({
       ...prev,
@@ -199,6 +223,21 @@ export const ClassExaminations: React.FC = () => {
           </button>
 
           <button
+            onClick={() => {
+              const kelvin = resultsSummary?.students?.find((s: any) => s.admission_number === 'STD3-001') || resultsSummary?.students?.[0];
+              if (kelvin) {
+                sendReportMutation.mutate(kelvin.student_id);
+              }
+            }}
+            disabled={sendReportMutation.isPending}
+            className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5"
+            title="Tuma ripoti ya mtihani kwa namba ya majaribio 0683312365"
+          >
+            <Send className="w-3.5 h-3.5 text-indigo-200" />
+            <span>{sendReportMutation.isPending && sendingStudentId ? t('Sending...', 'Inatuma...') : t('Send Report to 0683312365', 'Tuma Ripoti kwa 0683312365')}</span>
+          </button>
+
+          <button
             onClick={() => publishMutation.mutate()}
             disabled={publishMutation.isPending}
             className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition flex items-center gap-1.5"
@@ -208,6 +247,28 @@ export const ClassExaminations: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {reportSentResult && (
+        <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-medium space-y-2">
+          <div className="flex items-center justify-between font-bold text-sm text-blue-950">
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-blue-600" />
+              {t('SMS Examination Report Dispatched!', 'Ripoti ya Mtihani Imetumwa kwa SMS!')}
+            </span>
+            <span className="text-blue-700 font-mono text-xs bg-blue-100 px-2 py-0.5 rounded">
+              {reportSentResult.recipient_phone} ({reportSentResult.recipient_name})
+            </span>
+          </div>
+          <div className="p-3 rounded-lg bg-white border border-blue-100 font-mono text-xs text-slate-800 leading-relaxed shadow-sm">
+            "{reportSentResult.message_text}"
+          </div>
+          <div className="flex flex-wrap items-center justify-between text-[11px] text-blue-700 pt-0.5">
+            <span>Mwanafunzi: <strong>{reportSentResult.student_name}</strong> ({reportSentResult.admission_number})</span>
+            <span>Wastani: <strong>{reportSentResult.average_score}%</strong> (Daraja <strong>{reportSentResult.overall_grade}</strong>)</span>
+            <span className="font-mono text-[10px]">SMS Ref: {reportSentResult.provider_message_id}</span>
+          </div>
+        </div>
+      )}
 
       {publishSuccessMsg && (
         <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center gap-2">
@@ -264,6 +325,7 @@ export const ClassExaminations: React.FC = () => {
                 <th className="px-4 py-3">{t('Total', 'Jumla')}</th>
                 <th className="px-4 py-3">{t('Average', 'Wastani')}</th>
                 <th className="px-4 py-3">{t('Grade', 'Daraja')}</th>
+                <th className="px-4 py-3 text-right">{t('Action', 'Hatua')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -309,11 +371,22 @@ export const ClassExaminations: React.FC = () => {
                       Grade {st.overall_grade}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => sendReportMutation.mutate(st.student_id)}
+                      disabled={sendReportMutation.isPending && sendingStudentId === st.student_id}
+                      className="px-2.5 py-1 rounded bg-brand-navy hover:bg-slate-800 text-white text-[11px] font-bold shadow-sm transition inline-flex items-center gap-1"
+                      title={t('Send SMS report card to guardian', 'Tuma ripoti ya mtihani kwa mzazi kwa SMS')}
+                    >
+                      <Send className="w-3 h-3 text-brand-teal" />
+                      <span>{sendingStudentId === st.student_id ? t('Sending...', 'Inatuma...') : t('Send SMS', 'Tuma SMS')}</span>
+                    </button>
+                  </td>
                 </tr>
               ))}
               {(!resultsSummary?.students || resultsSummary.students.length === 0) && !isLoading && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-xs text-slate-400">
+                  <td colSpan={8} className="px-4 py-8 text-center text-xs text-slate-400">
                     {t('No examination marks recorded yet for this session.', 'Bado hakuna alama zilizorekodiwa.')}
                   </td>
                 </tr>

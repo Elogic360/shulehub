@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import secrets
 import uuid
 from typing import Optional, List
@@ -18,7 +19,9 @@ from app.models.communication import Announcement
 from app.models.ussd import UssdSession, UssdSessionEvent, UssdAccessAudit, UssdOtpVerification
 from app.models.necta import NectaCandidate, NectaStudentMatch, NectaMatchStatus
 from app.utils.phone import normalize_tanzanian_phone
-from app.integrations.africastalking import AfricasTalkingClient
+from app.integrations.africastalking import AfricasTalkingClient, default_at_client
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -194,15 +197,13 @@ async def process_ussd_callback(
 
                 # Dispatch OTP via Africa's Talking SMS client
                 try:
-                    at_client = AfricasTalkingClient()
-                    # In sandbox/dev or live, sends verification code
-                    import asyncio
-                    asyncio.create_task(at_client.send_sms(
+                    default_at_client.send_sms_sync(
                         recipients=[norm_phone],
                         message=f"Nambari yako ya siri ya ShuleHub kwa {target_student.first_name} ni: {raw_otp}. Inaisha baada ya dakika 5."
-                    ))
-                except Exception:
-                    pass
+                    )
+                    logger.info(f"Successfully dispatched USSD OTP SMS to {norm_phone}")
+                except Exception as exc:
+                    logger.warning(f"Could not dispatch USSD OTP SMS to {norm_phone}: {exc}")
 
                 masked_phone = f"...{norm_phone[-4:]}"
                 if settings.ENVIRONMENT.lower() in ("development", "sandbox", "test") or settings.DEBUG:
@@ -253,13 +254,27 @@ async def process_ussd_callback(
                     total = sum(float(r.score) for r in results)
                     avg = round(total / len(results), 1)
                     grade = "A" if avg >= 75 else ("B" if avg >= 65 else ("C" if avg >= 45 else ("D" if avg >= 30 else "F")))
-                    response_text = (
-                        f"END Ripoti ya {target_student.first_name}:\n"
+                    
+                    # Result text matching official format
+                    report_content = (
+                        f"Ripoti ya {target_student.first_name}:\n"
                         f"Wastani: {avg}%\n"
                         f"Daraja: {grade}\n"
                         f"Masomo: {len(results)}\n"
                         "Ripoti kamili imethibitishwa kupitia mfumo."
                     )
+                    response_text = f"END {report_content}"
+
+                    # Dispatch SMS message containing the result to the parent's phone
+                    try:
+                        default_at_client.send_sms_sync(
+                            recipients=[norm_phone],
+                            message=report_content,
+                        )
+                        logger.info(f"Dispatched USSD exam report SMS to {norm_phone} for student {target_student.first_name}")
+                    except Exception as sms_err:
+                        logger.warning(f"Could not send USSD exam report SMS to {norm_phone}: {sms_err}")
+
                 return Response(content=response_text, media_type="text/plain")
 
     # ==================== 2. NECTA RESULTS (FTNA / CSEE) ====================
@@ -323,7 +338,22 @@ async def process_ussd_callback(
             else:
                 total = sum(float(r.score) for r in results)
                 avg = round(total / len(results), 1)
-                response_text = f"END Mock Results {target_student.first_name}:\nWastani: {avg}%\nMasomo: {len(results)}"
+                grade = "A" if avg >= 75 else ("B" if avg >= 65 else ("C" if avg >= 45 else ("D" if avg >= 30 else "F")))
+                report_content = (
+                    f"Ripoti ya Mock ya {target_student.first_name}:\n"
+                    f"Wastani: {avg}%\n"
+                    f"Daraja: {grade}\n"
+                    f"Masomo: {len(results)}\n"
+                    "Ripoti kamili imethibitishwa kupitia mfumo."
+                )
+                response_text = f"END {report_content}"
+                try:
+                    default_at_client.send_sms_sync(
+                        recipients=[norm_phone],
+                        message=report_content,
+                    )
+                except Exception as sms_err:
+                    logger.warning(f"Could not send Mock SMS to {norm_phone}: {sms_err}")
             return Response(content=response_text, media_type="text/plain")
 
     # ==================== 4. SCHOOL FEES & BALANCES ====================

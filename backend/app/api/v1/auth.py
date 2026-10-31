@@ -1,12 +1,31 @@
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Optional, List
+import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import verify_password, hash_password, create_access_token, create_refresh_token, decode_token
-from app.schemas.auth import LoginRequest, TokenResponse, RegisterSchoolRequest, RegisterStaffRequest, RefreshTokenRequest
-from app.models.identity import User, School, SchoolMembership, MembershipRole, Role, RoleType, SchoolType
+from app.schemas.auth import (
+    LoginRequest,
+    TokenResponse,
+    RegisterSchoolRequest,
+    RegisterStaffRequest,
+    RefreshTokenRequest,
+    CreateSchoolInvitationRequest,
+    SchoolInvitationResponse,
+)
+from app.models.identity import (
+    User,
+    School,
+    SchoolMembership,
+    MembershipRole,
+    Role,
+    RoleType,
+    SchoolType,
+    SchoolRegistrationInvitation,
+)
 from app.models.academic import AcademicLevel, AcademicYear, AcademicTerm
 from app.models.operations import Subscription, SubscriptionPlan, SubscriptionStatus
 from app.utils.phone import normalize_tanzanian_phone
@@ -19,7 +38,30 @@ router = APIRouter()
 def register_school(req: RegisterSchoolRequest, db: Session = Depends(get_db)):
     """
     Registers a new private primary or secondary school with its default academic structure.
+    Requires or consumes an authorized Super Admin invitation token if provided.
     """
+    # 0. Validate Invitation Token if provided
+    invitation_record = None
+    if req.invitation_token:
+        invitation_record = db.execute(
+            select(SchoolRegistrationInvitation).where(SchoolRegistrationInvitation.token == req.invitation_token.strip())
+        ).scalar_one_or_none()
+        if not invitation_record:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Kiungo cha mwaliko wa usajili si sahihi au hakipo.",
+            )
+        if invitation_record.is_used:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Kiungo hiki cha mwaliko kimeshatumika tayari kusajili shule nyingine.",
+            )
+        if invitation_record.expires_at < datetime.now(timezone.utc):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Muda wa kiungo hiki cha usajili umekwisha. Wasiliana na Msimamizi Mkuu.",
+            )
+
     # 1. Normalize contact phone
     try:
         norm_phone = normalize_tanzanian_phone(req.contact_phone)
@@ -131,6 +173,12 @@ def register_school(req: RegisterSchoolRequest, db: Session = Depends(get_db)):
             sms_credits_remaining=500,
         )
         db.add(sub)
+
+    # If registration was initiated via an authorized invitation token, mark it as consumed
+    if invitation_record:
+        invitation_record.is_used = True
+        invitation_record.used_at = datetime.now(timezone.utc)
+        invitation_record.registered_school_id = school.id
 
     db.commit()
 
@@ -317,3 +365,114 @@ def get_me(
         } if school else None,
         "preferred_language": current_user.preferred_language,
     }
+
+
+@router.get("/school-invitations/validate")
+def validate_school_invitation(token: str, db: Session = Depends(get_db)):
+    """
+    Validates a registration invite token. Public endpoint called by registration page.
+    """
+    inv = db.execute(
+        select(SchoolRegistrationInvitation).where(SchoolRegistrationInvitation.token == token.strip())
+    ).scalar_one_or_none()
+
+    if not inv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kiungo cha mwaliko hakipo au si sahihi.")
+    if inv.is_used:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Kiungo hiki cha mwaliko kimeshatumika tayari kusajili shule.")
+    if inv.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Muda wa kiungo hiki cha usajili umekwisha. Wasiliana na msimamizi mkuu.")
+
+    return {
+        "valid": True,
+        "token": inv.token,
+        "target_school_name": inv.target_school_name,
+        "target_contact_email": inv.target_contact_email,
+        "target_contact_phone": inv.target_contact_phone,
+        "expires_at": inv.expires_at,
+    }
+
+
+@router.post("/school-invitations", response_model=SchoolInvitationResponse)
+def create_school_invitation(
+    req: CreateSchoolInvitationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Super Admin generates a secure, shareable registration link for a new school.
+    """
+    if not current_user.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Ni Msimamizi Mkuu tu (Super Admin) anayeruhusiwa kutoa viungo vya kusajili shule.",
+        )
+
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=req.expires_in_days)
+
+    inv = SchoolRegistrationInvitation(
+        token=token,
+        target_school_name=req.target_school_name,
+        target_contact_email=str(req.target_contact_email) if req.target_contact_email else None,
+        target_contact_phone=req.target_contact_phone,
+        created_by_user_id=current_user.id,
+        expires_at=expires_at,
+        notes=req.notes,
+        is_used=False,
+    )
+    db.add(inv)
+    db.commit()
+    db.refresh(inv)
+
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
+    invitation_url = f"{frontend_url}/register-school?token={inv.token}"
+
+    return SchoolInvitationResponse(
+        id=inv.id,
+        token=inv.token,
+        invitation_url=invitation_url,
+        target_school_name=inv.target_school_name,
+        target_contact_email=inv.target_contact_email,
+        target_contact_phone=inv.target_contact_phone,
+        is_used=inv.is_used,
+        used_at=inv.used_at,
+        expires_at=inv.expires_at,
+        is_expired=inv.expires_at < datetime.now(timezone.utc),
+        created_at=inv.created_at,
+    )
+
+
+@router.get("/school-invitations", response_model=List[SchoolInvitationResponse])
+def list_school_invitations(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Super Admin views generated school registration invitation links.
+    """
+    if not current_user.is_superadmin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    invitations = db.execute(
+        select(SchoolRegistrationInvitation).order_by(SchoolRegistrationInvitation.created_at.desc())
+    ).scalars().all()
+
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
+    now = datetime.now(timezone.utc)
+    return [
+        SchoolInvitationResponse(
+            id=inv.id,
+            token=inv.token,
+            invitation_url=f"{frontend_url}/register-school?token={inv.token}",
+            target_school_name=inv.target_school_name,
+            target_contact_email=inv.target_contact_email,
+            target_contact_phone=inv.target_contact_phone,
+            is_used=inv.is_used,
+            used_at=inv.used_at,
+            expires_at=inv.expires_at,
+            is_expired=inv.expires_at < now,
+            created_at=inv.created_at,
+        )
+        for inv in invitations
+    ]

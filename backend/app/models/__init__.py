@@ -11,6 +11,7 @@ from app.models.identity import (
     RolePermission,
     SchoolMembership,
     MembershipRole,
+    SchoolRegistrationInvitation,
 )
 from app.models.academic import (
     Gender,
@@ -137,6 +138,7 @@ __all__ = [
     "RolePermission",
     "SchoolMembership",
     "MembershipRole",
+    "SchoolRegistrationInvitation",
     # Academic
     "Gender",
     "EnrollmentStatus",

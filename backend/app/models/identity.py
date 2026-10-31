@@ -134,3 +134,21 @@ class MembershipRole(Base, UUIDMixin, TimestampMixin):
     __table_args__ = (
         UniqueConstraint("membership_id", "role_id", name="uq_membership_role"),
     )
+
+
+class SchoolRegistrationInvitation(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "school_registration_invitations"
+
+    token: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
+    target_school_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    target_contact_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    target_contact_phone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    registered_school_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("schools.id", ondelete="SET NULL"), nullable=True)
+    is_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    notes: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+
+    created_by: Mapped["User"] = relationship("User", foreign_keys=[created_by_user_id])
+    registered_school: Mapped[Optional["School"]] = relationship("School", foreign_keys=[registered_school_id])

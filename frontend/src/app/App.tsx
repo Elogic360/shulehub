@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Navbar } from '../components/Navbar';
 import { Sidebar } from '../components/Sidebar';
 import { Login } from '../features/auth/Login';
+import { RegisterSchool } from '../features/auth/RegisterSchool';
 import { OwnerDashboard } from '../features/owner/OwnerDashboard';
 import { AcademicStructure } from '../features/owner/AcademicStructure';
 import { StaffManagement } from '../features/owner/StaffManagement';
@@ -54,6 +55,7 @@ export const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={!user ? <Login /> : getHomeRoute()} />
+      <Route path="/register-school" element={<RegisterSchool />} />
       <Route path="/" element={getHomeRoute()} />
 
       {/* Super Admin Routes */}

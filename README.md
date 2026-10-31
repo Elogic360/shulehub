@@ -1,8 +1,8 @@
-# ShuleConnect (Tanzania)
+# ShuleHub (Tanzania)
 > **Production-Oriented Education Communication & Parent Engagement SaaS**
 > Built for private primary and secondary schools in Tanzania.
 
-[![CI](https://github.com/shuleconnect/shuleconnect/actions/workflows/ci.yml/badge.svg)](https://github.com/shuleconnect/shuleconnect/actions/workflows/ci.yml)
+[![CI](https://github.com/shulehub/shulehub/actions/workflows/ci.yml/badge.svg)](https://github.com/shulehub/shulehub/actions/workflows/ci.yml)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-blue.svg)](LICENSE)
 [![PostgreSQL 18](https://img.shields.io/badge/PostgreSQL-18.x-blue.svg)](https://www.postgresql.org/)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-green.svg)](https://www.python.org/)
@@ -13,7 +13,7 @@
 
 ## 1. Executive Summary & Purpose
 
-**ShuleConnect** is an enterprise-grade, multi-tenant communication and parent-engagement platform engineered specifically for Tanzanian educational workflows. Rather than attempting to bloat into a cumbersome ERP, ShuleConnect focuses relentlessly on the high-friction communication bridge between schools, class teachers, and parents/guardians.
+**ShuleHub** is an enterprise-grade, multi-tenant communication and parent-engagement platform engineered specifically for Tanzanian educational workflows. Rather than attempting to bloat into a cumbersome ERP, ShuleHub focuses relentlessly on the high-friction communication bridge between schools, class teachers, and parents/guardians.
 
 ### Key Capabilities
 - **Multi-Tenant PostgreSQL 18 with Native Row-Level Security (RLS)**: Enforces complete physical/logical tenant isolation at the database kernel level across 79 tables using session variables (`app.current_school_id`).
@@ -51,7 +51,7 @@ graph TD
     Nginx -->|/api/v1/*| FastAPI[FastAPI Backend Application]
     Nginx -->|/*| SPA[React 18 + Vite + Tailwind SPA]
     
-    FastAPI -->|PostgreSQL 18 Protocol / RLS Context| DB[(PostgreSQL 18 shuleconnect_db)]
+    FastAPI -->|PostgreSQL 18 Protocol / RLS Context| DB[(PostgreSQL 18 shulehub_db)]
     FastAPI -->|Enqueue Tasks| Redis[(Redis 7 In-Memory Broker)]
     
     CeleryWorker[Celery Async Task Workers] -->|Consume| Redis
@@ -80,7 +80,7 @@ graph TD
 ## 3. Directory Structure
 
 ```
-shuleconnect/
+shulehub/
 ├── backend/
 │   ├── alembic/                # Database migrations (Alembic)
 │   ├── app/
@@ -118,7 +118,7 @@ shuleconnect/
 
 ### Prerequisites
 - **OS**: Linux (Fedora 40+, Ubuntu 22.04+, or macOS/WSL2)
-- **PostgreSQL 18**: Active on `127.0.0.1:5432` with user `shuleconnect_user` and database `shuleconnect_db`
+- **PostgreSQL 18**: Active on `127.0.0.1:5432` with user `shulehub_user` and database `shulehub_db`
 - **Redis**: Active on `127.0.0.1:6379`
 - **Python**: 3.12+
 - **Node.js**: 20+ & `pnpm` (10+)
@@ -217,7 +217,7 @@ After running `python -m app.core.seed`, the following default platform administ
 
 | Role | Email / Identifier | Password | Scope |
 | :--- | :--- | :--- | :--- |
-| **Platform Super Admin** | `admin@shuleconnect.co.tz` | `SuperAdmin2026!` | Global / All Tenants |
+| **Platform Super Admin** | `admin@shulehub.co.tz` | `SuperAdmin2026!` | Global / All Tenants |
 | **School Owner** | Configured during school registration | User-defined | School Wide |
 | **Class Teacher** | Registered by Owner/Admin | User-defined | Assigned Class Scope |
 | **Parent/Guardian** | Verified Tanzanian Mobile (`+255...`) | One-Time SMS Code | Linked Children Scope |
@@ -238,5 +238,5 @@ After running `python -m app.core.seed`, the following default platform administ
 ---
 
 ## 8. License & Commercial Rights
-Copyright © 2026 ShuleConnect Technologies Ltd. All Rights Reserved.
+Copyright © 2026 ShuleHub Technologies Ltd. All Rights Reserved.
 Unauthorized copying or distribution of this software is strictly prohibited.

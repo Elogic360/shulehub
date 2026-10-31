@@ -7,7 +7,8 @@ from fastapi import APIRouter, Depends, Form, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 
-from app.core.database import get_db
+from app.core.config import settings
+from app.core.database import get_db, set_rls_tenant_context
 from app.models.identity import School
 from app.models.academic import Guardian, StudentGuardian, Student, StudentEnrollment, EnrollmentStatus
 from app.models.examinations import Examination, StudentExamResult, ResultStatus, ExaminationSubject, ExamType
@@ -122,6 +123,9 @@ async def process_ussd_callback(
     # Filter students for the selected school
     school_students = [s for s in students if s.school_id == selected_school.id]
 
+    if selected_school:
+        set_rls_tenant_context(db, str(selected_school.id))
+
     response_text = ""
     is_end = False
 
@@ -193,7 +197,10 @@ async def process_ussd_callback(
                     pass
 
                 masked_phone = f"...{norm_phone[-4:]}"
-                response_text = f"CON Nambari ya uthibitisho imetumwa kwa SMS kwa {masked_phone}.\nIngiza nambari ya tarakimu 6:"
+                if settings.ENVIRONMENT.lower() in ("development", "sandbox", "test") or settings.DEBUG:
+                    response_text = f"CON Nambari ya uthibitisho imetumwa kwa SMS kwa {masked_phone} (Sandbox OTP: {raw_otp}).\nIngiza nambari ya tarakimu 6:"
+                else:
+                    response_text = f"CON Nambari ya uthibitisho imetumwa kwa SMS kwa {masked_phone}.\nIngiza nambari ya tarakimu 6:"
                 return Response(content=response_text, media_type="text/plain")
 
             elif len(operational_inputs) == 3:

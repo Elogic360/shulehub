@@ -38,6 +38,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi import HTTPException
+
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
@@ -51,17 +56,6 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api/v1")
 
 
-@app.get("/", status_code=status.HTTP_200_OK, tags=["Health"])
-def root_status():
-    return {
-        "status": "online",
-        "service": "ShuleHub Backend API",
-        "version": settings.VERSION,
-        "environment": settings.ENVIRONMENT,
-        "docs": "/docs",
-    }
-
-
 @app.get("/health", status_code=status.HTTP_200_OK, tags=["Health"])
 def health_check():
     return {
@@ -70,3 +64,29 @@ def health_check():
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
     }
+
+
+# Frontend SPA and Static Assets Mounting
+FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+
+if FRONTEND_DIST.exists() and (FRONTEND_DIST / "index.html").exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_frontend_spa(full_path: str):
+        if full_path.startswith("api/") or full_path == "docs" or full_path.startswith("docs/") or full_path == "redoc":
+            raise HTTPException(status_code=404, detail="Not Found")
+        target_file = FRONTEND_DIST / full_path
+        if full_path and target_file.is_file():
+            return FileResponse(target_file)
+        return FileResponse(FRONTEND_DIST / "index.html")
+else:
+    @app.get("/", status_code=status.HTTP_200_OK, tags=["Health"])
+    def root_status():
+        return {
+            "status": "online",
+            "service": "ShuleHub Backend API",
+            "version": settings.VERSION,
+            "environment": settings.ENVIRONMENT,
+            "docs": "/docs",
+        }

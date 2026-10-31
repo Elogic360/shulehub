@@ -1,0 +1,11 @@
+reg_no,full_name,gender,date_of_birth,guardian_name,guardian_phone,guardian_relationship
+STD3-001,Kelvin Rashidi,M,2017-03-14,Amina Bakari,0683312365,MOTHER
+STD3-002,Neema Charles Mtweve,F,2017-07-22,Charles Mtweve,0713998877,FATHER
+STD3-003,Baraka Daniel Msangi,M,2017-11-05,Daniel Msangi,0755112233,FATHER
+STD3-004,Faraja Zawadi Komba,F,2017-05-18,Zawadi Komba,0768445566,MOTHER
+STD3-005,Brian Joseph Mdemu,M,2017-01-30,Joseph Mdemu,0784112244,FATHER
+STD3-006,Lilian Christopher Lyimo,F,2017-09-12,Christopher Lyimo,0655334455,FATHER
+STD3-007,Erick Godson Mushi,M,2017-04-04,Ester Mushi,0712887766,MOTHER
+STD3-008,Agnes Michael Shirima,F,2017-08-19,Michael Shirima,0754223344,FATHER
+STD3-009,David Robert Mrema,M,2017-06-25,Robert Mrema,0789001122,FATHER
+STD3-010,Faith John Mushi,F,2017-10-15,Grace John,0765998877,MOTHER

@@ -308,7 +308,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>PostgreSQL 18 Multi-Tenant RLS</span>
+                <span>Institutional Tenant Privacy & Protection</span>
               </div>
             </div>
           </div>
@@ -1036,10 +1036,10 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
                 <ShieldCheck className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-brand-navy">PostgreSQL Row-Level Security</h3>
+              <h3 className="text-base font-bold text-brand-navy">Institutional Tenant Isolation</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Tenant isolation is enforced natively at the PostgreSQL 18 kernel level (`tenant_isolation_policy`).
-                No school can ever access or leak another school's student or financial data.
+                Tenant isolation is enforced natively at the enterprise database level.
+                No school can ever access or view another institution's student, academic, or financial records.
               </p>
             </div>
 
@@ -1260,8 +1260,8 @@ export const LandingPage: React.FC = () => {
                 Production-oriented education communication and parent engagement SaaS for private primary and
                 secondary schools in Tanzania.
               </p>
-              <div className="text-[11px] text-slate-500 font-mono">
-                Operating System: Linux / PostgreSQL 18 / Valkey Native
+              <div className="text-[11px] text-slate-400 font-medium">
+                Enterprise Cloud Infrastructure &bull; 99.9% Uptime Guarantee
               </div>
             </div>
 

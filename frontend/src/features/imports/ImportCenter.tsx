@@ -78,6 +78,48 @@ export const ImportCenter: React.FC = () => {
     }
   };
 
+  const handleLoadDemoFile = () => {
+    let demoCsv = '';
+    let filename = '';
+    if (workflow === 'STUDENT_REGISTRATION') {
+      demoCsv = `reg_no,full_name,gender,date_of_birth,guardian_name,guardian_phone,guardian_relationship
+STD3-001,Kelvin Rashidi,M,2017-03-14,Amina Bakari,0683312365,MOTHER
+STD3-002,Neema Charles Mtweve,F,2017-07-22,Charles Mtweve,0713998877,FATHER
+STD3-003,Baraka Daniel Msangi,M,2017-11-05,Daniel Msangi,0755112233,FATHER
+STD3-004,Faraja Zawadi Komba,F,2017-05-18,Zawadi Komba,0768445566,MOTHER
+STD3-005,Brian Joseph Mdemu,M,2017-01-30,Joseph Mdemu,0784112244,FATHER`;
+      filename = 'sample_students_std3.csv';
+    } else if (workflow === 'EXAM_RESULTS') {
+      demoCsv = `admission_number,student_name,MATH,KISW,ENG,SCI,SST
+STD3-001,Kelvin Rashidi,88,94,82,90,85
+STD3-002,Neema Charles Mtweve,92,89,95,91,88
+STD3-003,Baraka Daniel Msangi,76,82,78,74,79
+STD3-004,Faraja Zawadi Komba,85,90,87,83,86`;
+      filename = 'sample_exam_marks_std3.csv';
+    } else if (workflow === 'FEE_BALANCES') {
+      demoCsv = `admission_number,student_name,total_fees,total_paid,balance,as_of_date
+STD3-001,Kelvin Rashidi,450000,450000,0,2026-10-31
+STD3-002,Neema Charles Mtweve,450000,250000,200000,2026-10-31
+STD3-003,Baraka Daniel Msangi,450000,150000,300000,2026-10-31`;
+      filename = 'sample_fee_balances_std3.csv';
+    } else {
+      demoCsv = `fee_category,fee_description,amount,due_date
+TUITION,Standard 3 Term 1 Tuition,450000,2026-03-31
+TRANSPORT,Kinondoni Bus Service,150000,2026-03-31
+MEALS,Hot Lunch Plan,120000,2026-03-31`;
+      filename = 'sample_fee_structures_std3.csv';
+    }
+
+    const demoBlob = new Blob([demoCsv], { type: 'text/csv;charset=utf-8;' });
+    const demoFile = new File([demoBlob], filename, { type: 'text/csv' });
+    setFile(demoFile);
+    setMessage(
+      language === 'sw'
+        ? `Faili la majaribio '${filename}' limepakiwa tayari. Bofya 'Pakia na Uhakiki' kuendelea.`
+        : `Sample demo file '${filename}' loaded. Click 'Upload & Validate' to inspect.`
+    );
+  };
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return;
@@ -265,6 +307,20 @@ export const ImportCenter: React.FC = () => {
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
                     className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
                   />
+
+                  <div className="mt-4 pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <span className="text-xs text-slate-500 font-medium">
+                      {language === 'sw' ? 'Au tumia faili la majaribio:' : 'Or use demo test data:'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleLoadDemoFile}
+                      className="px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold hover:bg-teal-100 transition shadow-xs flex items-center gap-1.5"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-teal-600" />
+                      <span>{language === 'sw' ? 'Pakia Faili la Majaribio (Kelvin & 0683312365)' : 'Load Demo Sample (Kelvin & 0683312365)'}</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3">

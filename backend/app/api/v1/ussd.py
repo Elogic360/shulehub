@@ -28,6 +28,7 @@ def hash_otp(code: str) -> str:
 
 
 @router.post("")
+@router.post("/callback")
 async def process_ussd_callback(
     sessionId: str = Form(...),
     serviceCode: str = Form(...),

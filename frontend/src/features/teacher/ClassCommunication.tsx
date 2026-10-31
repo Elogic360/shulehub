@@ -23,6 +23,7 @@ export const ClassCommunication: React.FC = () => {
   const [targetingMode, setTargetingMode] = useState<'CLASS_BULK' | 'SELECTED_GUARDIANS' | 'INDIVIDUAL'>('CLASS_BULK');
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedGuardianIds, setSelectedGuardianIds] = useState<string[]>([]);
+  const [guardianSearch, setGuardianSearch] = useState('');
   const [title, setTitle] = useState('');
   const [messageContent, setMessageContent] = useState('');
 
@@ -217,33 +218,99 @@ export const ClassCommunication: React.FC = () => {
 
             {/* If Selected or Individual, show guardian picker */}
             {targetingMode !== 'CLASS_BULK' && (
-              <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 max-h-48 overflow-y-auto space-y-1.5">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  {targetingMode === 'INDIVIDUAL'
-                    ? t('Select One Guardian:', 'Chagua Mzazi Mmoja:')
-                    : t('Check Guardians to Receive Message:', 'Chagua Wazazi Watakaopokea:')}
-                </span>
-                {students.map((st: any) => {
-                  const g = st.guardians?.[0];
-                  if (!g) return null;
-                  const isChecked = selectedGuardianIds.includes(g.id);
-                  return (
-                    <label
-                      key={st.id}
-                      className={`flex items-center gap-2 p-2 rounded cursor-pointer text-xs transition ${
-                        isChecked ? 'bg-brand-navy/10 font-bold text-brand-navy' : 'hover:bg-slate-100 text-slate-700'
-                      }`}
+              <div className="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    {targetingMode === 'INDIVIDUAL'
+                      ? t('Select Recipient Guardian / Student:', 'Chagua Mzazi / Mwanafunzi Mlenga:')
+                      : t('Select Multiple Guardians:', 'Chagua Wazazi Watakaopokea:')}
+                  </span>
+
+                  {/* Quick Select Test Student Button */}
+                  {students.some((st: any) => st.guardians?.[0]?.primary_phone?.includes('683312365')) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const testSt = students.find((st: any) => st.guardians?.[0]?.primary_phone?.includes('683312365'));
+                        if (testSt?.guardians?.[0]) {
+                          setSelectedGuardianIds([testSt.guardians[0].id]);
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded bg-teal-50 border border-teal-200 text-brand-teal text-[11px] font-bold hover:bg-teal-100 transition self-start sm:self-auto flex items-center gap-1"
                     >
-                      <input
-                        type={targetingMode === 'INDIVIDUAL' ? 'radio' : 'checkbox'}
-                        checked={isChecked}
-                        onChange={() => toggleGuardianSelection(g.id)}
-                        className="text-brand-teal focus:ring-brand-teal"
-                      />
-                      <span>{g.full_name} ({st.first_name} {st.last_name} &bull; {g.primary_phone})</span>
-                    </label>
-                  );
-                })}
+                      <span>★ {t('Select Test Student (0683312365)', 'Chagua Mwanafunzi wa Jaribio (0683312365)')}</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter Input */}
+                <input
+                  type="text"
+                  placeholder={t('Type student name, guardian or phone number to filter...', 'Andika jina la mwanafunzi, mzazi au namba...')}
+                  value={guardianSearch}
+                  onChange={(e) => setGuardianSearch(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal"
+                />
+
+                <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
+                  {students
+                    .filter((st: any) => {
+                      if (!guardianSearch.trim()) return true;
+                      const q = guardianSearch.toLowerCase();
+                      const g = st.guardians?.[0];
+                      return (
+                        `${st.first_name} ${st.last_name}`.toLowerCase().includes(q) ||
+                        (g?.full_name && g.full_name.toLowerCase().includes(q)) ||
+                        (g?.primary_phone && g.primary_phone.includes(q)) ||
+                        st.admission_number.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((st: any) => {
+                      const g = st.guardians?.[0];
+                      if (!g) return null;
+                      const isChecked = selectedGuardianIds.includes(g.id);
+                      const isTestNumber = g.primary_phone.includes('683312365');
+
+                      return (
+                        <label
+                          key={st.id}
+                          className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer text-xs transition ${
+                            isChecked
+                              ? 'bg-teal-50/80 border-brand-teal text-brand-navy font-semibold shadow-xs'
+                              : 'bg-white border-slate-200 hover:bg-slate-100/70 text-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type={targetingMode === 'INDIVIDUAL' ? 'radio' : 'checkbox'}
+                              name="guardianSelection"
+                              checked={isChecked}
+                              onChange={() => toggleGuardianSelection(g.id)}
+                              className="w-4 h-4 text-brand-teal focus:ring-brand-teal"
+                            />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900">
+                                  {st.first_name} {st.last_name}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  ({st.admission_number})
+                                </span>
+                                {isTestNumber && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-teal-100 text-teal-800 border border-teal-300">
+                                    Target Test Phone
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[11px] text-slate-500 block">
+                                {t('Guardian: ', 'Mzazi: ')}{g.full_name} ({g.relationship || 'Guardian'}) &bull; <strong className="font-mono text-slate-800">{g.primary_phone}</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                </div>
               </div>
             )}
 

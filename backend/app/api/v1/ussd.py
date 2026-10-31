@@ -47,6 +47,9 @@ async def process_ussd_callback(
     except ValueError:
         norm_phone = phoneNumber
 
+    # Clear tenant context to ensure cross-tenant guardian lookup across all schools
+    set_rls_tenant_context(db, None)
+
     # 1. Session tracking
     session = db.execute(select(UssdSession).where(UssdSession.session_id == sessionId)).scalar_one_or_none()
     if not session:
@@ -60,9 +63,9 @@ async def process_ussd_callback(
         db.add(session)
         db.flush()
 
-    # 2. Guardian identity lookup
-    guardian = db.execute(select(Guardian).where(Guardian.primary_phone == norm_phone)).scalar_one_or_none()
-    if not guardian:
+    # 2. Guardian identity lookup across tenants
+    guardians = db.execute(select(Guardian).where(Guardian.primary_phone == norm_phone)).scalars().all()
+    if not guardians:
         db.add(UssdAccessAudit(
             phone_number=norm_phone,
             action_attempted="USSD_LOGIN",
@@ -74,9 +77,11 @@ async def process_ussd_callback(
             media_type="text/plain",
         )
 
+    guardian_ids = [g.id for g in guardians]
+
     # 3. Linked students and school routing
     links = db.execute(
-        select(StudentGuardian).where(StudentGuardian.guardian_id == guardian.id)
+        select(StudentGuardian).where(StudentGuardian.guardian_id.in_(guardian_ids))
     ).scalars().all()
     students = [sl.student for sl in links if sl.student and sl.student.is_active]
 
@@ -88,7 +93,7 @@ async def process_ussd_callback(
 
     # Distinct schools associated with guardian
     school_ids = list(set(s.school_id for s in students))
-    schools = db.execute(select(School).where(School.id.in_(school_ids))).scalars().all()
+    schools = db.execute(select(School).where(School.id.in_(school_ids)).order_by(School.name)).scalars().all()
     schools_map = {s.id: s for s in schools}
 
     # Parse multi-turn input sequence: e.g. "1*2*123456"
@@ -119,6 +124,9 @@ async def process_ussd_callback(
                 operational_inputs = raw_inputs[1:]
             except (ValueError, IndexError):
                 return Response(content="END Chaguo si sahihi la shule. Tafadhali piga tena.", media_type="text/plain")
+
+    # Resolve guardian record belonging to selected school context
+    guardian = next((g for g in guardians if g.school_id == selected_school.id), guardians[0])
 
     # Filter students for the selected school
     school_students = [s for s in students if s.school_id == selected_school.id]

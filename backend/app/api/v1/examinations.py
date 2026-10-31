@@ -690,7 +690,7 @@ async def send_student_exam_report(
     current_user: User = Depends(get_current_user),
     school: School = Depends(get_current_school),
     db: Session = Depends(get_db),
-    _: bool = Depends(PermissionChecker("exam:publish_results")),
+    _: bool = Depends(PermissionChecker("communication:send_individual")),
 ):
     """
     Sends an official personalized examination report card via Africa's Talking SMS
@@ -712,6 +712,9 @@ async def send_student_exam_report(
     ).scalars().first()
     class_group = en.class_group if en else None
     class_name = class_group.name if class_group else "Darasa"
+
+    if class_group and not verify_class_teacher_access(class_group.id, current_user, school.id, db):
+        raise HTTPException(status_code=403, detail="Access denied: Cannot send report for student outside your assigned class")
 
     # Find examination
     if examination_id:

@@ -247,6 +247,34 @@ export const ClassCommunication: React.FC = () => {
               </div>
             )}
 
+            {/* Quick Template Picker */}
+            {templates.length > 0 && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>{t('Load from Template', 'Tumia Kiolezo cha Ujumbe')}</span>
+                  <span className="text-[10px] text-brand-teal font-bold">{templates.length} {t('templates available', 'violezo vinavyopatikana')}</span>
+                </label>
+                <select
+                  defaultValue=""
+                  onChange={(e) => {
+                    const tmpl = templates.find((t: any) => t.id === e.target.value);
+                    if (tmpl) {
+                      setTitle(tmpl.name);
+                      setMessageContent(tmpl.content);
+                    }
+                  }}
+                  className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal"
+                >
+                  <option value="" disabled>{t('-- Select a Ready-Made Template --', '-- Chagua Kiolezo Tayari --')}</option>
+                  {templates.map((tmpl: any) => (
+                    <option key={tmpl.id} value={tmpl.id}>
+                      [{tmpl.category}] {tmpl.name} ({tmpl.language.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Campaign Title */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">

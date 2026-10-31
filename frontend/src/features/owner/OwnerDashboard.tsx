@@ -126,7 +126,7 @@ export const OwnerDashboard: React.FC = () => {
             TZS {Number(analytics?.total_fees_collected_tzs || 0).toLocaleString()}
           </div>
           <span className="text-xs text-slate-400 mt-1 block">
-            Baki: TZS {Number(analytics?.total_fees_outstanding_tzs || 0).toLocaleString()}
+            {t('Outstanding: TZS ', 'Baki: TZS ')}{Number(analytics?.total_fees_outstanding_tzs || 0).toLocaleString()}
           </span>
         </div>
       </div>

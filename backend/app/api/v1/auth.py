@@ -6,13 +6,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import verify_password, hash_password, create_access_token, create_refresh_token, decode_token
+from app.core.security import verify_password, hash_password, create_access_token, create_refresh_token, create_password_reset_token, decode_token
 from app.schemas.auth import (
     LoginRequest,
     TokenResponse,
     RegisterSchoolRequest,
     RegisterStaffRequest,
     RefreshTokenRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
     CreateSchoolInvitationRequest,
     SchoolInvitationResponse,
 )
@@ -476,3 +478,63 @@ def list_school_invitations(
         )
         for inv in invitations
     ]
+
+
+@router.post("/forgot-password")
+def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Initiates password reset process without leaking user account existence.
+    Returns standard message whether user exists or not.
+    """
+    identifier = req.identifier.strip()
+    user = None
+
+    if "@" in identifier:
+        user = db.execute(select(User).where(User.email == identifier.lower())).scalar_one_or_none()
+
+    if not user:
+        try:
+            norm_phone = normalize_tanzanian_phone(identifier)
+            user = db.execute(select(User).where(User.phone_number == norm_phone)).scalar_one_or_none()
+        except ValueError:
+            pass
+
+    reset_token = None
+    if user and user.is_active:
+        reset_token = create_password_reset_token(str(user.id), expires_minutes=60)
+        # In production with SMS/Email delivery configured, dispatch password reset link here
+
+    return {
+        "status": "success",
+        "message": "If an account matching those credentials exists, password reset instructions have been dispatched.",
+        "dev_reset_token": reset_token if settings.ENVIRONMENT == "development" or settings.DEBUG else None,
+    }
+
+
+@router.post("/reset-password")
+def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Verifies reset token and updates user password with Argon2id hash.
+    """
+    payload = decode_token(req.token)
+    if not payload or payload.get("type") != "password_reset" or "sub" not in payload:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The password reset link is invalid or has expired. Please request a new one.",
+        )
+
+    user_id = payload.get("sub")
+    user = db.execute(select(User).where(User.id == user_id)).scalar_one_or_none()
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User account could not be found or has been deactivated.",
+        )
+
+    user.password_hash = hash_password(req.new_password)
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": "Your password has been successfully reset. You may now sign in.",
+    }

@@ -49,7 +49,7 @@ export const ParentPortal: React.FC = () => {
           </h1>
           <p className="text-xs text-slate-300 mt-1 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-brand-teal" />
-            <span>Simu: {portal?.phone_number || user?.phone_number} &bull; Personal Data Protected (PDPA 2022)</span>
+            <span>{t('Phone: ', 'Simu: ')}{portal?.phone_number || user?.phone_number} &bull; Personal Data Protected (PDPA 2022)</span>
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export const ParentPortal: React.FC = () => {
                     {child.full_name}
                   </h3>
                   <span className="text-xs text-slate-400 font-mono">
-                    Namba: {child.admission_number}
+                    {t('Adm No: ', 'Namba: ')}{child.admission_number}
                   </span>
                 </div>
 
@@ -171,7 +171,9 @@ export const ParentPortal: React.FC = () => {
               </div>
             ))}
             {(!portal?.announcements || portal.announcements.length === 0) && (
-              <span className="text-xs text-slate-400 py-3 block text-center">Hakuna matangazo mapya</span>
+              <span className="text-xs text-slate-400 py-3 block text-center">
+                {t('No new announcements at this time.', 'Hakuna matangazo mapya kwa sasa.')}
+              </span>
             )}
           </div>
         </div>

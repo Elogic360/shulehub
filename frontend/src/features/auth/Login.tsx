@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-import { Lock, Mail, Globe, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, Globe, ArrowRight, ShieldCheck, Eye, EyeOff, Home } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login, language, setLanguage, t } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Login form state
   const [username, setUsername] = useState('admin@shuleconnect.co.tz');
@@ -42,6 +44,15 @@ export const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-darkNavy via-brand-navy to-slate-900 flex flex-col justify-center items-center p-4">
+      <div className="absolute top-4 left-4">
+        <Link
+          to="/"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-xs font-semibold text-slate-200 hover:bg-slate-700 transition"
+        >
+          <Home className="w-3.5 h-3.5 text-brand-teal" />
+          <span>{t('Back to Website', 'Rudi Tovutini')}</span>
+        </Link>
+      </div>
       <div className="absolute top-4 right-4">
         <button
           onClick={() => setLanguage(language === 'sw' ? 'en' : 'sw')}
@@ -107,19 +118,35 @@ export const Login: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                {t('Password', 'Nenosiri')}
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  {t('Password', 'Nenosiri')}
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-semibold text-brand-teal hover:text-teal-700 transition"
+                >
+                  {t('Forgot password?', 'Umesahau nenosiri?')}
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-teal focus:border-transparent"
+                  className="w-full pl-9 pr-10 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-teal focus:border-transparent"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 

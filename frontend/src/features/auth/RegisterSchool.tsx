@@ -14,6 +14,9 @@ import {
   User,
   Globe,
   Loader2,
+  Eye,
+  EyeOff,
+  Home,
 } from 'lucide-react';
 
 export const RegisterSchool: React.FC = () => {
@@ -35,6 +38,7 @@ export const RegisterSchool: React.FC = () => {
   const [contactPhone, setContactPhone] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [ownerPassword, setOwnerPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -320,14 +324,22 @@ export const RegisterSchool: React.FC = () => {
                     <div className="relative">
                       <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                       <input
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         required
                         minLength={8}
                         value={ownerPassword}
                         onChange={(e) => setOwnerPassword(e.target.value)}
-                        placeholder="Angalau herufi 8"
-                        className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-teal"
+                        placeholder="••••••••"
+                        className="w-full pl-9 pr-10 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-teal"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
                 </div>

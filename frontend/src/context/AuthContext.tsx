@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [language, setLangState] = useState<Language>(() => {
-    return (localStorage.getItem('shuleconnect_lang') as Language) || 'sw';
+    return (localStorage.getItem('shuleconnect_lang') as Language) || 'en';
   });
 
   const login = (newToken: string, newUser: User) => {

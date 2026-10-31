@@ -52,6 +52,15 @@ def create_refresh_token(data: dict, expires_delta: Union[timedelta, None] = Non
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
+def create_password_reset_token(user_id: str, expires_minutes: int = 60) -> str:
+    """Creates a signed JWT password reset token."""
+    to_encode = {"sub": str(user_id), "type": "password_reset"}
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(minutes=expires_minutes)
+    to_encode.update({"exp": expire, "iat": now})
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
 def decode_token(token: str) -> dict:
     """Decodes and validates a JWT token."""
     try:

@@ -67,3 +67,12 @@ class RegisterStaffRequest(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    identifier: str = Field(..., description="Registered email address or Tanzanian mobile number")
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., description="Secure password reset token")
+    new_password: str = Field(..., min_length=8, description="New password (minimum 8 characters)")

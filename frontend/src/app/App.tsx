@@ -3,8 +3,12 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Navbar } from '../components/Navbar';
 import { Sidebar } from '../components/Sidebar';
+import { Breadcrumbs } from '../components/Breadcrumbs';
+import { LandingPage } from '../pages/LandingPage';
 import { Login } from '../features/auth/Login';
 import { RegisterSchool } from '../features/auth/RegisterSchool';
+import { ForgotPassword } from '../features/auth/ForgotPassword';
+import { ResetPassword } from '../features/auth/ResetPassword';
 import { OwnerDashboard } from '../features/owner/OwnerDashboard';
 import { AcademicStructure } from '../features/owner/AcademicStructure';
 import { StaffManagement } from '../features/owner/StaffManagement';
@@ -32,6 +36,7 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
       <div className="flex flex-1">
         <Sidebar />
         <main className="flex-1 p-6 md:p-8 overflow-y-auto max-w-7xl">
+          <Breadcrumbs />
           {children}
         </main>
       </div>
@@ -54,9 +59,12 @@ export const App: React.FC = () => {
 
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/dashboard" element={getHomeRoute()} />
       <Route path="/login" element={!user ? <Login /> : getHomeRoute()} />
       <Route path="/register-school" element={<RegisterSchool />} />
-      <Route path="/" element={getHomeRoute()} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Super Admin Routes */}
       <Route path="/admin" element={<ProtectedLayout><PlatformAdminDashboard /></ProtectedLayout>} />

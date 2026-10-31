@@ -96,7 +96,7 @@ export const TeacherDashboard: React.FC = () => {
               {students.length}
             </div>
             <span className="text-xs text-slate-500">
-              Uwezo wa darasa: {activeClass?.capacity || 50}
+              {t('Class capacity: ', 'Uwezo wa darasa: ')}{activeClass?.capacity || 50}
             </span>
           </div>
           <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
@@ -203,7 +203,7 @@ export const TeacherDashboard: React.FC = () => {
                         </span>
                       </div>
                     ) : (
-                      <span className="text-rose-500 italic">Hana mlezi</span>
+                      <span className="text-rose-500 italic">{t('No guardian linked', 'Hana mlezi')}</span>
                     )}
                   </td>
                 </tr>

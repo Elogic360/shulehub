@@ -14,6 +14,9 @@ import {
   ShieldAlert,
   UserCheck,
   Building,
+  Award,
+  Smartphone,
+  Upload,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -88,6 +91,18 @@ export const Sidebar: React.FC = () => {
               <Calendar className="w-4 h-4 text-violet-500" />
               <span>{t('Meetings', 'Mikutano ya Wazazi')}</span>
             </NavLink>
+            <NavLink to="/imports" className={navItemClass}>
+              <Upload className="w-4 h-4 text-teal-600" />
+              <span>{t('Excel Import Center', 'Kituo cha Excel & CSV')}</span>
+            </NavLink>
+            <NavLink to="/necta" className={navItemClass}>
+              <Award className="w-4 h-4 text-amber-500" />
+              <span>{t('NECTA Results', 'Matokeo ya NECTA')}</span>
+            </NavLink>
+            <NavLink to="/ussd-simulator" className={navItemClass}>
+              <Smartphone className="w-4 h-4 text-blue-600" />
+              <span>{t('USSD Simulator', 'Kifanisi cha USSD')}</span>
+            </NavLink>
           </>
         )}
 
@@ -120,6 +135,14 @@ export const Sidebar: React.FC = () => {
             <NavLink to="/teacher/meetings" className={navItemClass}>
               <Calendar className="w-4 h-4 text-violet-500" />
               <span>{t('Class Meetings', 'Mikutano ya Darasa')}</span>
+            </NavLink>
+            <NavLink to="/imports" className={navItemClass}>
+              <Upload className="w-4 h-4 text-teal-600" />
+              <span>{t('Excel Import Center', 'Kituo cha Excel & CSV')}</span>
+            </NavLink>
+            <NavLink to="/ussd-simulator" className={navItemClass}>
+              <Smartphone className="w-4 h-4 text-blue-600" />
+              <span>{t('USSD Simulator', 'Kifanisi cha USSD')}</span>
             </NavLink>
           </>
         )}

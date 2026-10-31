@@ -8,7 +8,7 @@ export const FeeManagement: React.FC = () => {
   const { t } = useAuth();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'invoices' | 'structures' | 'reminders'>('invoices');
+  const [activeTab, setActiveTab] = useState<'invoices' | 'structures' | 'reminders' | 'reconciliation'>('invoices');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showStructureModal, setShowStructureModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -64,6 +64,12 @@ export const FeeManagement: React.FC = () => {
     queryKey: ['fee_reminder_rules'],
     queryFn: async () => (await api.get('/fees/rules')).data,
   });
+
+  const { data: reconciliationData } = useQuery({
+    queryKey: ['fee_discrepancies'],
+    queryFn: async () => (await api.get('/fees/reconciliation/discrepancies')).data,
+  });
+  const discrepancies = reconciliationData?.discrepancies || [];
 
   // Mutations
   const recordPaymentMutation = useMutation({
@@ -234,6 +240,19 @@ export const FeeManagement: React.FC = () => {
         >
           {t('Automated Reminder Rules', 'Sheria za Vikumbusho')}
         </button>
+        <button
+          onClick={() => setActiveTab('reconciliation')}
+          className={`py-2.5 px-4 text-xs font-bold border-b-2 transition flex items-center gap-1.5 ${
+            activeTab === 'reconciliation' ? 'border-brand-teal text-brand-navy' : 'border-transparent text-slate-500'
+          }`}
+        >
+          <span>{t('Financial Reconciliation', 'Usuluhisho wa Kifedha')}</span>
+          {discrepancies.length > 0 && (
+            <span className="px-1.5 py-0.2 bg-rose-100 text-rose-700 rounded-full text-[10px] font-bold">
+              {discrepancies.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Tab 1: Invoices */}
@@ -359,6 +378,64 @@ export const FeeManagement: React.FC = () => {
               <span className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">Active</span>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Tab 4: Financial Reconciliation */}
+      {activeTab === 'reconciliation' && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-brand-navy">
+                {t('Ledger vs Imported Snapshot Discrepancies', 'Hitilafu za Baki ya Ankara dhidi ya Snapshot')}
+              </h3>
+              <p className="text-xs text-slate-500">
+                {t('Compares actual invoice payments against imported spreadsheets to prevent unexplained financial discrepancies.',
+                   'Inalinganisha malipo halisi dhidi ya faili zilizopakiwa kuzuia upotevu wa mapato.')}
+              </p>
+            </div>
+          </div>
+
+          {discrepancies.length === 0 ? (
+            <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-700">
+                {t('All Balances Reconciled Cleanly', 'Masalio Yote Yamelingana Kikamilifu')}
+              </p>
+              <p className="text-xs text-slate-400">Zero discrepancies detected between ledger and snapshot balances.</p>
+            </div>
+          ) : (
+            <div className="border border-slate-200 rounded-lg overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                  <tr>
+                    <th className="py-3 px-4">Ankara (Invoice)</th>
+                    <th className="py-3 px-4">Mwanafunzi</th>
+                    <th className="py-3 px-4">Jumla Iliyodaiwa</th>
+                    <th className="py-3 px-4">Iliyolipwa</th>
+                    <th className="py-3 px-4">Baki ya Daftari</th>
+                    <th className="py-3 px-4">Baki Iliyorekodiwa</th>
+                    <th className="py-3 px-4">Tofauti (Diff)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-mono text-xs">
+                  {discrepancies.map((d: any) => (
+                    <tr key={d.invoice_id} className="hover:bg-slate-50">
+                      <td className="py-3 px-4 font-bold text-brand-navy">{d.invoice_number}</td>
+                      <td className="py-3 px-4 font-sans font-medium text-slate-800">
+                        {d.student_name} <span className="text-slate-400 font-mono">({d.admission_number})</span>
+                      </td>
+                      <td className="py-3 px-4">TZS {d.total_invoiced_tzs.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-emerald-600">TZS {d.total_paid_tzs.toLocaleString()}</td>
+                      <td className="py-3 px-4 font-bold text-brand-navy">TZS {d.calculated_balance_tzs.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-slate-600">TZS {d.recorded_balance_tzs.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-rose-600 font-bold">TZS {d.discrepancy_tzs.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

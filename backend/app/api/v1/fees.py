@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Optional
 from datetime import date, datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 
@@ -439,3 +439,106 @@ def create_fee_reminder_rule(
     db.commit()
     db.refresh(rule)
     return rule
+
+
+# ==================== FINANCIAL RECONCILIATION ====================
+
+@router.get("/reconciliation/discrepancies")
+def get_fee_reconciliation_discrepancies(
+    school: School = Depends(get_current_school),
+    db: Session = Depends(get_db),
+    _: bool = Depends(PermissionChecker("fee:view")),
+):
+    """
+    Compares active student invoices and payment ledger against imported snapshots.
+    Flags discrepancies where ledger balance != snapshot balance.
+    """
+    if not school:
+        raise HTTPException(status_code=400, detail="School context required")
+
+    invoices = db.execute(
+        select(FeeInvoice).where(FeeInvoice.school_id == school.id)
+    ).scalars().all()
+
+    discrepancies = []
+    for inv in invoices:
+        student = inv.student
+        total_invoiced = float(inv.total_amount_tzs)
+        total_paid = sum(float(p.amount_tzs) for p in inv.payments)
+        calculated_balance = max(0.0, total_invoiced - total_paid)
+        recorded_balance = float(inv.balance_due_tzs)
+        diff = round(calculated_balance - recorded_balance, 2)
+
+        if abs(diff) > 0.01:
+            discrepancies.append({
+                "invoice_id": str(inv.id),
+                "invoice_number": inv.invoice_number,
+                "student_id": str(student.id),
+                "admission_number": student.admission_number,
+                "student_name": f"{student.first_name} {student.last_name}",
+                "total_invoiced_tzs": total_invoiced,
+                "total_paid_tzs": total_paid,
+                "calculated_balance_tzs": calculated_balance,
+                "recorded_balance_tzs": recorded_balance,
+                "discrepancy_tzs": diff,
+                "status": "DISCREPANCY_DETECTED",
+            })
+
+    return {
+        "school_id": str(school.id),
+        "total_discrepancies": len(discrepancies),
+        "discrepancies": discrepancies,
+    }
+
+
+@router.post("/reconciliation/apply-adjustment")
+def apply_reconciliation_adjustment(
+    invoice_id: uuid.UUID = Form(...),
+    adjustment_type: str = Form("CORRECTION"),  # DISCOUNT, WAIVER, CORRECTION
+    amount_tzs: float = Form(...),
+    reason: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    school: School = Depends(get_current_school),
+    db: Session = Depends(get_db),
+    _: bool = Depends(PermissionChecker("fee:manage")),
+):
+    """
+    Applies an authorized financial adjustment/waiver to reconcile a discrepancy,
+    recording an immutable audit trail in fee_adjustments.
+    """
+    if not school:
+        raise HTTPException(status_code=400, detail="School context required")
+
+    inv = db.execute(
+        select(FeeInvoice).where(FeeInvoice.id == invoice_id, FeeInvoice.school_id == school.id)
+    ).scalar_one_or_none()
+
+    if not inv:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    adjustment = FeeAdjustment(
+        school_id=school.id,
+        student_id=inv.student_id,
+        invoice_id=inv.id,
+        adjustment_type=adjustment_type,
+        amount_tzs=amount_tzs,
+        reason=reason,
+        authorized_by_user_id=current_user.id,
+    )
+    db.add(adjustment)
+
+    # Recompute invoice balance
+    inv.balance_due_tzs = max(0.0, float(inv.balance_due_tzs) - amount_tzs)
+    if inv.balance_due_tzs <= 0:
+        inv.status = FeeStatus.PAID
+    elif inv.balance_due_tzs < float(inv.total_amount_tzs):
+        inv.status = FeeStatus.PARTIALLY_PAID
+
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": f"Applied {adjustment_type} of TZS {amount_tzs:,.2f}",
+        "new_balance_tzs": float(inv.balance_due_tzs),
+    }
+

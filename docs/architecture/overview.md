@@ -165,19 +165,70 @@ sequenceDiagram
 
 ---
 
-## 7. Interactive USSD Engine
+## 7. Interactive USSD Engine with Cryptographic OTP Gate
 
-Feature phone users can dial the school's USSD shortcode (`*148*...#`) to receive real-time updates:
+Feature phone users dial `*384*55#` to interact with the school in real-time without internet access:
 
 ```
 [Main Menu]
 Karibu ShuleConnect!
-1. Matokeo ya Mtihani (Exam Results)
-2. Salio la Ada (Fee Balance)
-3. Matangazo na Mikutano (Notices & Meetings)
-4. Badili Lugha / Change Language
+1. Matokeo ya Ndani (Exam Results)
+2. Matokeo ya NECTA (FTNA/CSEE)
+3. Matokeo ya Mock
+4. Ada na Baki ya Malipo
+5. Mikutano ya Wazazi
+6. Matangazo ya Shule
+00. Toka
 ```
 
-- **Session Handling**: Multi-turn sessions are stored in Redis with a 120-second TTL.
-- **Identity Verification**: The incoming caller's MSISDN (`+255...`) is matched against verified guardian records in the database.
-- **Dual Language**: Seamless instant toggle between English and Kiswahili.
+### Deterministic Multi-School Routing
+If a parent or guardian has enrolled children across multiple different institutions, the platform automatically detects this and presents an initial school selection menu:
+```
+CON Karibu ShuleConnect. Chagua Shule:
+1. Feza Primary School
+2. St. Mary High School
+00. Toka
+```
+Selecting an institution dynamically scopes all child queries, financial accounts, and notices to that specific school context.
+
+### Cryptographic 6-Digit OTP Verification Gate
+To satisfy Tanzania PDPA 2022 privacy mandates, sensitive student marks and balances are guarded:
+1. Caller selects a student for internal or NECTA examinations.
+2. A random 6-digit cryptographic OTP is generated, salted, and hashed using SHA-256 (`UssdOtpVerification`).
+3. The OTP is dispatched via SMS to the guardian's verified MSISDN (`Expires in 5 minutes`).
+4. The caller is prompted on their handset to enter the 6-digit code.
+5. If invalid, attempts are decremented with a maximum threshold of 3 attempts before temporary account lockout.
+6. Upon correct entry, the confidential summary (Average %, Grade, Subjects count) is displayed.
+
+---
+
+## 8. Unified Excel Import Center & Audit Rollback
+
+The platform features an enterprise spreadsheet ingestion engine supporting 4 workflows:
+1. **Student Registration & Annual Enrollment**: Assigns unique collision-free 6-digit `ussd_access_id`, links guardians, and establishes class group enrollments.
+2. **Multi-Subject Exam Matrix Results**: Ingests multi-column grade sheets with absent (`ABS`) handling and out-of-bounds score rejection.
+3. **Fee Structures & Schedules**: Imports fee items and due dates per academic level.
+4. **Student Fee Balances**: Establishes initial opening accounts and triggers ledger reconciliation.
+
+### Import Processing Pipeline
+```
+[UPLOADED] --> [PARSING] --> [VALIDATING] --> [PREVIEW_READY] --> [COMMITTING] --> [COMMITTED]
+                                                                        |
+                                                                        +--> [REVERTED]
+```
+- **Formula Injection Sanitization**: Strips spreadsheet command execution characters (`=`, `+`, `-`, `@`, `\t`, `\r`) from all cells.
+- **SHA-256 Duplicate Check**: Prevents accidental re-import of identical spreadsheet batches.
+- **Staging Isolation**: All raw rows are staged in `import_staging_rows` with validation errors cataloged in `import_validation_errors`.
+- **Atomic Reversible Commits**: Each commit captures before/after states in `import_change_records`, enabling one-click atomic rollback (`/api/v1/imports/{id}/revert`).
+
+---
+
+## 9. NECTA National Assessment Module
+
+ShuleConnect bridges internal school administration with official National Examinations Council of Tanzania (**NECTA**) public releases:
+- **Formats Supported**: Form Two National Assessment (**FTNA**) and Certificate of Secondary Education Examination (**CSEE**).
+- **Candidate Ingestion**: Parses NECTA center pages, extracting candidate index numbers (`S.0101/0001`), gender, division (I, II, III, IV, 0), aggregate points, and individual subject letter grades.
+- **Matching Engine (`NectaMatcher`)**:
+  - Primary: Exact index number match against enrolled students (100% confidence).
+  - Secondary: High-threshold candidate name string similarity (90% confidence), routed to manual review queue (`PENDING_REVIEW`).
+- **Parent Engagement**: Verified NECTA results are published with bulk SMS dispatches to parents with confidential access links and USSD availability.

@@ -3,7 +3,7 @@ import io
 import uuid
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 import openpyxl
@@ -517,6 +517,95 @@ def publish_results(
         "message": f"Results published for {class_group.name}",
         "notifications_queued": dispatched_count,
     }
+
+
+@router.post("/results/withdraw")
+def withdraw_results(
+    examination_id: uuid.UUID = Form(...),
+    class_group_id: uuid.UUID = Form(...),
+    reason: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    school: School = Depends(get_current_school),
+    db: Session = Depends(get_db),
+    _: bool = Depends(PermissionChecker("exam:publish_results")),
+):
+    """
+    Withdraws published examination results for a class.
+    Marks student results as WITHDRAWN so they are hidden from USSD and Parent Portal.
+    """
+    if not school:
+        raise HTTPException(status_code=400, detail="School context required")
+
+    exam_subs = db.execute(
+        select(ExaminationSubject).where(
+            ExaminationSubject.examination_id == examination_id,
+            ExaminationSubject.class_group_id == class_group_id,
+        )
+    ).scalars().all()
+
+    es_ids = [es.id for es in exam_subs]
+    results = db.execute(
+        select(StudentExamResult).where(
+            StudentExamResult.examination_subject_id.in_(es_ids),
+            StudentExamResult.status.in_([ResultStatus.PUBLISHED, ResultStatus.RELEASED]),
+        )
+    ).scalars().all()
+
+    for r in results:
+        r.status = ResultStatus.WITHDRAWN
+
+    db.commit()
+    return {
+        "status": "success",
+        "message": f"Withdrawn {len(results)} results for examination",
+        "reason": reason,
+    }
+
+
+@router.post("/results/revise")
+def revise_results(
+    examination_id: uuid.UUID = Form(...),
+    class_group_id: uuid.UUID = Form(...),
+    revision_notes: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    school: School = Depends(get_current_school),
+    db: Session = Depends(get_db),
+    _: bool = Depends(PermissionChecker("exam:publish_results")),
+):
+    """
+    Creates an auditable incremented revision for published results.
+    Marks previous active results as SUPERSEDED and creates a new publication version.
+    """
+    if not school:
+        raise HTTPException(status_code=400, detail="School context required")
+
+    # Find highest publication version
+    prev_pub = db.execute(
+        select(ResultPublication).where(
+            ResultPublication.examination_id == examination_id,
+            ResultPublication.class_group_id == class_group_id,
+        ).order_by(ResultPublication.version.desc())
+    ).scalars().first()
+
+    new_version = (prev_pub.version + 1) if prev_pub else 2
+
+    new_pub = ResultPublication(
+        examination_id=examination_id,
+        class_group_id=class_group_id,
+        published_by_id=current_user.id,
+        version=new_version,
+        notification_dispatched=False,
+    )
+    db.add(new_pub)
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": f"Created publication revision v{new_version}",
+        "version": new_version,
+        "revision_notes": revision_notes,
+    }
+
 
 
 @router.get("/class/{class_group_id}/summary")

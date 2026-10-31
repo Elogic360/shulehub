@@ -143,6 +143,7 @@ class Student(Base, UUIDMixin, TimestampMixin):
 
     school_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("schools.id", ondelete="CASCADE"), nullable=False, index=True)
     admission_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    ussd_access_id: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, index=True)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     middle_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -233,3 +234,17 @@ class GuardianConsent(Base, UUIDMixin, TimestampMixin):
     ip_address: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
     guardian: Mapped["Guardian"] = relationship("Guardian", back_populates="consents")
+
+
+class GuardianContactHistory(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "guardian_contact_history"
+
+    guardian_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("guardians.id", ondelete="CASCADE"), nullable=False, index=True)
+    school_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("schools.id", ondelete="CASCADE"), nullable=False, index=True)
+    previous_phone: Mapped[str] = mapped_column(String(30), nullable=False)
+    new_phone: Mapped[str] = mapped_column(String(30), nullable=False)
+    change_reason: Mapped[str] = mapped_column(String(255), nullable=False)
+    changed_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    verification_state: Mapped[str] = mapped_column(String(50), default="PENDING_REVERIFICATION", nullable=False)
+
+    guardian: Mapped["Guardian"] = relationship("Guardian")

@@ -51,7 +51,11 @@ async def process_delivery_report(
     db.add(webhook_event)
 
     if msg_id and raw_status:
-        domain_status = default_at_client.map_provider_status_to_domain(raw_status)
+        # In delivery reports, 'Success' or 'Delivered' means confirmed handset delivery
+        if raw_status.strip().lower() in ("success", "delivered"):
+            domain_status = MessageDeliveryStatus.DELIVERED
+        else:
+            domain_status = default_at_client.map_provider_status_to_domain(raw_status)
 
         # Update CampaignRecipient
         recipient = db.execute(

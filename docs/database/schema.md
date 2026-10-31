@@ -156,7 +156,7 @@ Records inbound bank slips, mobile money transactions (M-Pesa, Airtel Money, Tig
 
 ## 4. Row-Level Security (RLS) Configuration
 
-PostgreSQL Row-Level Security policies are applied across all 27 tenant tables:
+PostgreSQL Row-Level Security policies are applied across all 31 tenant tables:
 
 ```sql
 -- Pattern applied to each tenant table
@@ -174,3 +174,26 @@ CREATE POLICY tenant_isolation_policy ON <table>
         OR current_setting('app.is_super_admin', true) = 'true'
     );
 ```
+
+---
+
+## 5. Enhanced Enterprise Modules
+
+### 5.1 Excel Import Center (`import_*`)
+The import engine provides staging, dry-run validation, and rollback across 5 relational tables:
+- `import_batches`: Tracks workflow type (`STUDENT_REGISTRATION`, `EXAM_RESULTS`, `FEE_STRUCTURES`, `FEE_BALANCES`), status (`UPLOADED` -> `COMMITTED`), row metrics (`total_rows`, `new_records_count`, `rejected_records_count`), and reversion timestamps.
+- `import_batch_files`: Uploaded spreadsheet metadata, SHA-256 hash deduplication, MIME type, and storage reference.
+- `import_staging_rows`: Staged raw and mapped JSON rows before commit, tracking individual row statuses (`PENDING`, `VALID`, `ERROR`, `COMMITTED`).
+- `import_validation_errors`: Granular row and column-level error descriptions (e.g., formula injection, invalid phone, missing admission, out-of-bounds score).
+- `import_change_records`: Audit journal recording before/after JSON states of all created or updated entities for atomic rollback.
+
+### 5.2 NECTA National Assessment Module (`necta_*`)
+- `necta_examinations`: Exam registry for FTNA/CSEE national examinations by year, exam type, center number, and center name.
+- `necta_candidates`: Candidate index numbers, sex, division (I, II, III, IV, 0), and aggregate points.
+- `necta_candidate_subjects`: Individual subject letter grades (e.g., CIV - 'C', KISW - 'A', B/MATH - 'B').
+- `necta_student_matches`: Student link associations with confidence score (1.0 for exact index match, 0.9 for candidate name match) and review status (`MATCHED`, `PENDING_REVIEW`, `REJECTED`).
+- `necta_fetch_errors`: Downstream crawling/parsing error journal.
+
+### 5.3 USSD OTP & Security Verification (`ussd_otp_verifications`)
+- `ussd_otp_verifications`: Tracks 6-digit cryptographic OTP challenges, SHA-256 salted hashes, 5-minute TTL, attempt counters (max 3), and verified handset sessions to safeguard student examination results and fee balances.
+- `guardian_contact_history`: Immutable log of guardian phone changes, recording initiating user ID, old phone, new phone, change reason, and invalidation of prior USSD sessions.

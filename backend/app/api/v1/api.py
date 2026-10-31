@@ -11,6 +11,8 @@ from app.api.v1 import (
     ussd,
     webhooks,
     parents,
+    imports,
+    necta,
 )
 
 api_router = APIRouter()
@@ -26,3 +28,5 @@ api_router.include_router(meetings.router, prefix="/meetings", tags=["Parent-Tea
 api_router.include_router(ussd.router, prefix="/ussd", tags=["USSD Service"])
 api_router.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks & Callbacks"])
 api_router.include_router(parents.router, prefix="/parents", tags=["Parent Portal"])
+api_router.include_router(imports.router, prefix="/imports", tags=["Excel Import Center"])
+api_router.include_router(necta.router, prefix="/necta", tags=["NECTA National Results"])

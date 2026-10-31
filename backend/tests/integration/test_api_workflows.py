@@ -143,17 +143,18 @@ def test_full_school_lifecycle_and_features():
         "text": "",
     })
     assert ussd_root.status_code == 200
-    assert "CON Karibu ShuleConnect" in ussd_root.text
+    assert "CON" in ussd_root.text
+    assert "Matokeo ya Ndani" in ussd_root.text
 
-    # Step 2: Select 2 (Fee balance)
+    # Step 2: Select 4 (Fee balance)
     ussd_fees = client.post("/api/v1/ussd", data={
         "sessionId": "ATSession_12345",
         "serviceCode": "*384*55#",
         "phoneNumber": guardian_phone,
-        "text": "2",
+        "text": "4",
     })
     assert ussd_fees.status_code == 200
-    assert "END Baki ya Ada:" in ussd_fees.text
+    assert "Salio la Ada" in ussd_fees.text
 
     # 13. Create Fee Category, Structure, and Assign
     cat_res = client.post("/api/v1/fees/categories", json={

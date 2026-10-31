@@ -106,9 +106,10 @@ class AfricasTalkingClient:
         Maps raw Africa's Talking status strings to domain MessageDeliveryStatus.
         """
         normalized = (status_str or "").strip().lower()
-        if normalized in ("success", "delivered"):
+        if normalized in ("delivered",):
             return MessageDeliveryStatus.DELIVERED
-        elif normalized in ("sent",):
+        elif normalized in ("success", "sent"):
+            # Initial API dispatch response: accepted by telco gateway
             return MessageDeliveryStatus.SENT
         elif normalized in ("submitted", "buffered"):
             return MessageDeliveryStatus.SUBMITTED

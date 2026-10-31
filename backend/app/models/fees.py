@@ -100,6 +100,7 @@ class FeeInvoice(Base, UUIDMixin, TimestampMixin):
 
     items: Mapped[List["FeeInvoiceItem"]] = relationship("FeeInvoiceItem", back_populates="invoice", cascade="all, delete-orphan")
     payments: Mapped[List["FeePayment"]] = relationship("FeePayment", back_populates="invoice")
+    student: Mapped["Student"] = relationship("Student")
 
 
 class FeeInvoiceItem(Base, UUIDMixin, TimestampMixin):

@@ -29,9 +29,34 @@ from app.models.academic import (
     GuardianContact,
     StudentGuardian,
     GuardianConsent,
+    GuardianContactHistory,
+)
+from app.models.imports import (
+    ImportWorkflowType,
+    ImportStatus,
+    ImportRowStatus,
+    ImportBatch,
+    ImportBatchFile,
+    ImportStagingRow,
+    ImportValidationError,
+    ImportChangeRecord,
+)
+from app.models.necta import (
+    NectaExamType,
+    NectaMatchStatus,
+    NectaExamination,
+    NectaCandidate,
+    NectaCandidateSubject,
+    NectaStudentMatch,
+    NectaFetchError,
+)
+from app.models.ussd import (
+    UssdSession,
+    UssdSessionEvent,
+    UssdAccessAudit,
+    UssdOtpVerification,
 )
 from app.models.communication import (
-    TargetingMode,
     CampaignStatus,
     MessageDeliveryStatus,
     Announcement,

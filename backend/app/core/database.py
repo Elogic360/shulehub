@@ -25,6 +25,10 @@ def get_db() -> Generator[Session, None, None]:
     try:
         yield db
     finally:
+        try:
+            set_rls_tenant_context(db, None)
+        except Exception:
+            pass
         db.close()
 
 
@@ -32,10 +36,10 @@ def set_rls_tenant_context(session: Session, school_id: str | None) -> None:
     """Sets PostgreSQL session variable for Row-Level Security isolation."""
     if school_id:
         session.execute(
-            text("SELECT set_config('app.current_school_id', :school_id, true)"),
+            text("SELECT set_config('app.current_school_id', :school_id, false)"),
             {"school_id": str(school_id)},
         )
     else:
         session.execute(
-            text("SELECT set_config('app.current_school_id', '', true)")
+            text("SELECT set_config('app.current_school_id', '', false)")
         )

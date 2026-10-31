@@ -20,9 +20,13 @@ class ExamType(str, enum.Enum):
 
 class ResultStatus(str, enum.Enum):
     DRAFT = "DRAFT"
+    VALIDATED = "VALIDATED"
     SUBMITTED = "SUBMITTED"
     APPROVED = "APPROVED"
-    PUBLISHED = "PUBLISHED"
+    PUBLISHED = "PUBLISHED"  # Alias for RELEASED
+    RELEASED = "RELEASED"
+    SUPERSEDED = "SUPERSEDED"
+    WITHDRAWN = "WITHDRAWN"
     REJECTED = "REJECTED"
 
 

@@ -3,7 +3,7 @@ import io
 import uuid
 from typing import List, Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 import openpyxl
@@ -20,7 +20,10 @@ from app.models.academic import (
     Gender,
     GuardianRelationship,
     EnrollmentStatus,
+    GuardianContactHistory,
 )
+from app.models.ussd import UssdOtpVerification
+from app.services.import_engine import generate_unique_ussd_access_id
 from app.schemas.student import (
     StudentCreate,
     StudentUpdate,
@@ -86,9 +89,15 @@ def list_students(
                 "can_receive_results": gl.can_receive_results,
             })
 
+        # Ensure student has a numeric USSD access ID
+        if not st.ussd_access_id:
+            st.ussd_access_id = generate_unique_ussd_access_id(db)
+            db.flush()
+
         results.append({
             "id": str(st.id),
             "admission_number": st.admission_number,
+            "ussd_access_id": st.ussd_access_id,
             "first_name": st.first_name,
             "middle_name": st.middle_name,
             "last_name": st.last_name,
@@ -381,3 +390,111 @@ def link_guardian_to_student(
 
     db.commit()
     return {"status": "success", "message": "Guardian linked successfully"}
+
+
+@router.post("/guardians/{guardian_id}/change-phone")
+def change_guardian_phone(
+    guardian_id: uuid.UUID,
+    new_phone: str = Form(...),
+    change_reason: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    school: School = Depends(get_current_school),
+    db: Session = Depends(get_db),
+    _: bool = Depends(PermissionChecker("guardian:edit")),
+):
+    """
+    Records an auditable guardian phone number change, preserves contact history,
+    and invalidates active USSD verification tokens.
+    """
+    if not school:
+        raise HTTPException(status_code=400, detail="School context required")
+
+    try:
+        norm_phone = normalize_tanzanian_phone(new_phone)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    guardian = db.execute(select(Guardian).where(Guardian.id == guardian_id)).scalar_one_or_none()
+    if not guardian:
+        raise HTTPException(status_code=404, detail="Guardian not found")
+
+    old_phone = guardian.primary_phone
+
+    # Record history
+    history = GuardianContactHistory(
+        guardian_id=guardian.id,
+        school_id=school.id,
+        previous_phone=old_phone,
+        new_phone=norm_phone,
+        change_reason=change_reason,
+        changed_by_user_id=current_user.id,
+        verification_state="PENDING_REVERIFICATION",
+    )
+    db.add(history)
+
+    # Invalidate existing USSD OTP tokens for this phone/guardian
+    active_tokens = db.execute(
+        select(UssdOtpVerification).where(
+            UssdOtpVerification.guardian_id == guardian.id,
+            UssdOtpVerification.is_used == False,
+        )
+    ).scalars().all()
+    for tok in active_tokens:
+        tok.is_used = True
+
+    guardian.primary_phone = norm_phone
+    guardian.is_verified = False  # Requires re-verification
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": f"Phone changed from {old_phone} to {norm_phone}. USSD sessions invalidated.",
+        "previous_phone": old_phone,
+        "new_phone": norm_phone,
+    }
+
+
+@router.post("/{student_id}/lifecycle-status")
+def update_student_lifecycle_status(
+    student_id: uuid.UUID,
+    enrollment_status: EnrollmentStatus = Form(...),
+    notes: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user),
+    school: School = Depends(get_current_school),
+    db: Session = Depends(get_db),
+    _: bool = Depends(PermissionChecker("student:edit")),
+):
+    """
+    Reconciles student academic lifecycle status (PROMOTED, TRANSFERRED, WITHDRAWN, COMPLETED).
+    Preserves historical enrollment records without destructive deletions.
+    """
+    if not school:
+        raise HTTPException(status_code=400, detail="School context required")
+
+    student = db.execute(select(Student).where(Student.id == student_id, Student.school_id == school.id)).scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    active_enrollment = db.execute(
+        select(StudentEnrollment).where(
+            StudentEnrollment.student_id == student.id,
+            StudentEnrollment.enrollment_status == EnrollmentStatus.ACTIVE,
+        )
+    ).scalar_one_or_none()
+
+    if active_enrollment:
+        active_enrollment.enrollment_status = enrollment_status
+
+    if enrollment_status in (EnrollmentStatus.WITHDRAWN, EnrollmentStatus.COMPLETED):
+        student.is_active = False
+    else:
+        student.is_active = True
+
+    db.commit()
+    return {
+        "student_id": str(student.id),
+        "status": enrollment_status.value,
+        "is_active": student.is_active,
+        "notes": notes,
+    }
+

@@ -16,16 +16,30 @@
 **ShuleConnect** is an enterprise-grade, multi-tenant communication and parent-engagement platform engineered specifically for Tanzanian educational workflows. Rather than attempting to bloat into a cumbersome ERP, ShuleConnect focuses relentlessly on the high-friction communication bridge between schools, class teachers, and parents/guardians.
 
 ### Key Capabilities
-- **Multi-Tenant PostgreSQL 18 with Native Row-Level Security (RLS)**: Enforces complete physical/logical tenant isolation at the database kernel level using session variables (`app.current_school_id`).
-- **Class-Centric Operational Model**: Empowers Class Teachers as the operational administrators of their specific classes, while restricting unauthorized cross-class data exposure.
-- **Tanzanian Communication Rail**:
+- **Multi-Tenant PostgreSQL 18 with Native Row-Level Security (RLS)**: Enforces complete physical/logical tenant isolation at the database kernel level across 79 tables using session variables (`app.current_school_id`).
+- **Unified Excel Import Center**: Enterprise spreadsheet ingestion engine supporting 4 mission-critical workflows:
+  1. Student Registration & Annual Enrollment (with USSD Access ID assignment)
+  2. Multi-Subject Examination Matrix Results
+  3. Fee Structures & Due Dates
+  4. Student Fee Balances & Opening Accounts
+  Features strict formula injection sanitization (`=`, `+`, `-`, `@`), duplicate file hash detection, structured preview, dry-run validation, atomic commit, and granular rollback.
+- **NECTA National Assessment Module**:
+  - Ingests official Form Two National Assessment (**FTNA**) and Certificate of Secondary Education Examination (**CSEE**) results from NECTA portal/Maktaba HTML tables.
+  - Multi-tier candidate matching engine: Exact examination index number matching (`S0101/0001`) with fallback to candidate name similarity scoring.
+  - Match confirmation and review workflow with SMS dispatch to parents.
+- **Class-Centric Operational Model**: Empowers Class Teachers as operational administrators of their specific classes with strict cross-class data boundary isolation.
+- **Tanzanian Communication Rail & Hardened USSD**:
   - Direct integration with **Africa's Talking** Bulk SMS and USSD gateways.
   - Strict E.164 normalization for Tanzanian mobile networks (Vodacom, Airtel, Tigo, Halotel, TTCL: `+255...`).
   - Automatic GSM 7-bit vs Unicode detection and multi-part SMS concatenation.
-  - Interactive USSD menu (`*148*...#`) for parents with feature phones to query examination grades, pending fee balances, and meeting notices in English and Kiswahili.
-- **Tanzania PDPA 2022 Compliance**: Personal Data Protection Act compliance where sensitive examination marks are never broadcast over unencrypted, insecure bulk SMS. Instead, parents receive a cryptographically signed notification link or USSD prompt to view their child's confidential report card.
+  - **Deterministic Multi-School USSD Routing**: Parents with children across different schools seamlessly select their institution upon dialing `*384*55#`.
+  - **Cryptographic 6-Digit OTP Verification**: 5-minute TTL, SHA-256 salted digest, and 3-attempt brute-force prevention before revealing sensitive examination marks or fee balances.
+- **Financial Ledger & Automated Reconciliation**:
+  - Fee schedule creation, student invoice generation, and idempotent multi-invoice payment allocation.
+  - Automated reconciliation engine identifying discrepancies between invoice payment ledgers and external imported snapshots.
+  - Authorized audit-tracked adjustments (Waivers, Discounts, Corrections).
+- **Tanzania PDPA 2022 Compliance**: Personal Data Protection Act compliance where sensitive examination marks are never broadcast over unencrypted, insecure bulk SMS. Instead, parents receive a cryptographically signed notification link or OTP-verified USSD prompt.
 - **Modular Academic Hierarchy**: Configurable academic structures supporting both Primary Schools (Standard 1 to 7) and Secondary Schools (Form 1 to 6 / A-Level), streams (A, B, C), and terms.
-- **Financial Ledger & Automated Fee Reminders**: Fee schedule creation, student invoice generation, idempotent multi-invoice payment allocation, and asynchronous Celery Beat reminder dispatches.
 
 ---
 
@@ -157,7 +171,7 @@ The application will be accessible at:
 
 ## 5. Testing & Quality Assurance
 
-The test suite exercises cross-tenant RLS boundaries, authentication integrity, Tanzanian phone normalization, GSM-7/Unicode SMS segmentation, grading standards, and the complete school lifecycle:
+The test suite exercises cross-tenant RLS boundaries, authentication integrity, Tanzanian phone normalization, GSM-7/Unicode SMS segmentation, grading standards, Excel import workflows, NECTA parsing and candidate auto-matching, secure USSD OTP state machine, and financial reconciliation:
 
 ```bash
 # Run all tests
@@ -172,14 +186,27 @@ make test-security
 Sample output:
 ```
 tests/integration/test_api_workflows.py::test_full_school_lifecycle_and_features PASSED
+tests/integration/test_fees_and_reconciliation.py::test_fee_reconciliation_workflow PASSED
+tests/integration/test_ussd_otp_and_flow.py::test_ussd_unregistered_phone PASSED
+tests/integration/test_ussd_otp_and_flow.py::test_ussd_otp_generation_and_verification PASSED
+tests/integration/test_ussd_otp_and_flow.py::test_ussd_multi_school_routing PASSED
 tests/security/test_security_isolation.py::test_cross_tenant_isolation PASSED
 tests/security/test_security_isolation.py::test_unauthenticated_request_rejected PASSED
+tests/unit/test_excel_imports.py::test_formula_injection_sanitization PASSED
+tests/unit/test_excel_imports.py::test_parse_csv_file_valid PASSED
+tests/unit/test_excel_imports.py::test_parse_csv_empty_file PASSED
+tests/unit/test_excel_imports.py::test_student_import_workflow_validation PASSED
 tests/unit/test_grading_and_fees.py::test_calculate_grade_standards PASSED
 tests/unit/test_grading_and_fees.py::test_calculate_grade_different_max_score PASSED
+tests/unit/test_necta_service.py::test_parse_candidate_row_pipe_format PASSED
+tests/unit/test_necta_service.py::test_parse_candidate_row_regex_fallback PASSED
+tests/unit/test_necta_service.py::test_parse_candidate_row_invalid PASSED
+tests/unit/test_necta_service.py::test_necta_matcher_exact_and_review PASSED
 tests/unit/test_phone_and_sms.py::test_tanzanian_phone_normalization_valid PASSED
 tests/unit/test_phone_and_sms.py::test_tanzanian_phone_normalization_invalid PASSED
 tests/unit/test_sms_segmentation_gsm7 PASSED
 tests/unit/test_sms_segmentation_unicode PASSED
+============================== 21 passed in 3.78s ==============================
 ```
 
 ---

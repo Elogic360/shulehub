@@ -18,7 +18,6 @@ const routeNameMap: Record<string, { en: string; sw: string }> = {
   parent: { en: 'Parent Portal', sw: 'Mlango wa Mzazi' },
   imports: { en: 'Excel Import Center', sw: 'Kituo cha Excel' },
   necta: { en: 'NECTA Integration', sw: 'Matokeo ya NECTA' },
-  'ussd-simulator': { en: 'USSD Simulator', sw: 'Kifanisi cha USSD' },
 };
 
 export const Breadcrumbs: React.FC = () => {

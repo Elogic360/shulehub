@@ -1293,7 +1293,7 @@ export const LandingPage: React.FC = () => {
               <ul className="space-y-2">
                 <li><Link to="/login" className="hover:text-white transition">Staff Sign In</Link></li>
                 <li><Link to="/register-school" className="hover:text-white transition">School Registration</Link></li>
-                <li><Link to="/ussd-simulator" className="hover:text-white transition">USSD *384*55#</Link></li>
+                <li><a href="https://developers.africastalking.com/simulator" target="_blank" rel="noopener noreferrer" className="hover:text-white transition">Africa's Talking USSD (*384*55#)</a></li>
                 <li><button onClick={() => scrollTo('faq')} className="hover:text-white transition">Help & FAQ</button></li>
               </ul>
             </div>

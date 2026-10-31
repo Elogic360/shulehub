@@ -22,7 +22,6 @@ import { ParentPortal } from '../features/parent/ParentPortal';
 import { PlatformAdminDashboard } from '../features/admin/PlatformAdminDashboard';
 import { ImportCenter } from '../features/imports/ImportCenter';
 import { NectaDashboard } from '../features/necta/NectaDashboard';
-import { UssdSimulator } from '../features/ussd/UssdSimulator';
 
 const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -94,7 +93,6 @@ export const App: React.FC = () => {
       {/* Shared Operations Routes */}
       <Route path="/imports" element={<ProtectedLayout><ImportCenter /></ProtectedLayout>} />
       <Route path="/necta" element={<ProtectedLayout><NectaDashboard /></ProtectedLayout>} />
-      <Route path="/ussd-simulator" element={<ProtectedLayout><UssdSimulator /></ProtectedLayout>} />
 
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/" replace />} />

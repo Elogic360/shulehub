@@ -8,12 +8,12 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('shuleconnect_token');
+  const token = localStorage.getItem('shulehub_token') || localStorage.getItem('shuleconnect_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  const schoolId = localStorage.getItem('shuleconnect_school_id');
+  const schoolId = localStorage.getItem('shulehub_school_id') || localStorage.getItem('shuleconnect_school_id');
   if (schoolId) {
     config.headers['X-School-ID'] = schoolId;
   }
@@ -26,6 +26,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       if (window.location.pathname !== '/login') {
+        localStorage.removeItem('shulehub_token');
+        localStorage.removeItem('shulehub_user');
         localStorage.removeItem('shuleconnect_token');
         localStorage.removeItem('shuleconnect_user');
         window.location.href = '/login';

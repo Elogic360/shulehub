@@ -120,7 +120,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <div>
               <span className="font-black text-xl tracking-tight text-brand-navy">
-                Shule<span className="text-brand-teal">Connect</span>
+                Shule<span className="text-brand-teal">Hub</span>
               </span>
               <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest -mt-1">
                 Tanzania Education SaaS

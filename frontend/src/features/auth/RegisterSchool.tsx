@@ -129,7 +129,7 @@ export const RegisterSchool: React.FC = () => {
             S
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">
-            Shule<span className="text-brand-teal">Connect</span>
+            Shule<span className="text-brand-teal">Hub</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
             {t('Official School Registration Portal', 'Mfumo Rasmi wa Usajili wa Shule')}

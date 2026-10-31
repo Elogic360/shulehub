@@ -51,6 +51,17 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api/v1")
 
 
+@app.get("/", status_code=status.HTTP_200_OK, tags=["Health"])
+def root_status():
+    return {
+        "status": "online",
+        "service": "ShuleConnect Backend API",
+        "version": settings.VERSION,
+        "environment": settings.ENVIRONMENT,
+        "docs": "/docs",
+    }
+
+
 @app.get("/health", status_code=status.HTTP_200_OK, tags=["Health"])
 def health_check():
     return {

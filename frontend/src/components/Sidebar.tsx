@@ -155,7 +155,7 @@ export const Sidebar: React.FC = () => {
 
       {/* Footer Info */}
       <div className="pt-4 mt-auto border-t border-slate-100 text-xs text-slate-400 text-center">
-        <span>ShuleConnect Tanzania &copy; 2026</span>
+        <span>ShuleHub Tanzania &copy; 2026</span>
       </div>
     </aside>
   );

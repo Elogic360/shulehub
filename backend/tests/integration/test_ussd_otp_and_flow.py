@@ -25,7 +25,7 @@ def test_ussd_unregistered_phone():
         },
     )
     assert res.status_code == 200
-    assert "END Karibu ShuleConnect" in res.text
+    assert "END Karibu ShuleHub" in res.text
     assert "haijasajiliwa" in res.text
 
 
@@ -225,6 +225,6 @@ def test_ussd_multi_school_routing(db_session: Session, test_school: School):
         },
     )
     assert res.status_code == 200
-    assert "CON Karibu ShuleConnect. Chagua Shule:" in res.text
+    assert "CON Karibu ShuleHub. Chagua Shule:" in res.text
     assert test_school.name in res.text
     assert school2.name in res.text

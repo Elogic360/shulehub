@@ -73,7 +73,7 @@ async def process_ussd_callback(
         ))
         db.commit()
         return Response(
-            content="END Karibu ShuleConnect. Nambari yako haijasajiliwa na shule yoyote. Wasiliana na uongozi wa shule yako.",
+            content="END Karibu ShuleHub. Nambari yako haijasajiliwa na shule yoyote. Wasiliana na uongozi wa shule yako.",
             media_type="text/plain",
         )
 
@@ -87,7 +87,7 @@ async def process_ussd_callback(
 
     if not students:
         return Response(
-            content="END Karibu ShuleConnect. Huna mwanafunzi aliyesajiliwa kwenye akaunti yako kwa sasa.",
+            content="END Karibu ShuleHub. Huna mwanafunzi aliyesajiliwa kwenye akaunti yako kwa sasa.",
             media_type="text/plain",
         )
 
@@ -103,7 +103,7 @@ async def process_ussd_callback(
     if raw_inputs and raw_inputs[-1] == "00":
         session.is_active = False
         db.commit()
-        return Response(content="END Asante kwa kutumia ShuleConnect. Kwaheri!", media_type="text/plain")
+        return Response(content="END Asante kwa kutumia ShuleHub. Kwaheri!", media_type="text/plain")
 
     # If guardian has students across MULTIPLE schools, handle school context first
     has_multiple_schools = len(schools) > 1
@@ -112,7 +112,7 @@ async def process_ussd_callback(
 
     if has_multiple_schools:
         if not raw_inputs:
-            lines = ["CON Karibu ShuleConnect. Chagua Shule:"]
+            lines = ["CON Karibu ShuleHub. Chagua Shule:"]
             for idx, sc in enumerate(schools, start=1):
                 lines.append(f"{idx}. {sc.name}")
             lines.append("00. Toka")
@@ -199,7 +199,7 @@ async def process_ussd_callback(
                     import asyncio
                     asyncio.create_task(at_client.send_sms(
                         recipients=[norm_phone],
-                        message=f"Nambari yako ya siri ya ShuleConnect kwa {target_student.first_name} ni: {raw_otp}. Inaisha baada ya dakika 5."
+                        message=f"Nambari yako ya siri ya ShuleHub kwa {target_student.first_name} ni: {raw_otp}. Inaisha baada ya dakika 5."
                     ))
                 except Exception:
                     pass

@@ -58,7 +58,7 @@ export const ForgotPassword: React.FC = () => {
             S
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">
-            Shule<span className="text-brand-teal">Connect</span>
+            Shule<span className="text-brand-teal">Hub</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
             {t('Password Recovery Portal', 'Mfumo wa Kurejesha Nenosiri')}
@@ -92,7 +92,7 @@ export const ForgotPassword: React.FC = () => {
                       required
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="0712345678 / user@shuleconnect.co.tz"
+                      placeholder="0712345678 / user@shulehub.co.tz"
                       className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-teal focus:border-transparent"
                     />
                   </div>

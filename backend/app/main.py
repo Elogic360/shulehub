@@ -14,7 +14,7 @@ logger = logging.getLogger("shuleconnect")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Ensure base roles, permissions and plans are seeded
-    logger.info("Initializing ShuleConnect SaaS backend...")
+    logger.info("Initializing ShuleHub SaaS backend...")
     db = SessionLocal()
     try:
         seed_roles_and_permissions(db)
@@ -25,11 +25,11 @@ async def lifespan(app: FastAPI):
         db.close()
     yield
     # Shutdown
-    logger.info("Shutting down ShuleConnect backend.")
+    logger.info("Shutting down ShuleHub backend.")
 
 
 app = FastAPI(
-    title="ShuleConnect API",
+    title="ShuleHub API",
     description="Production-Oriented Education Communication SaaS in Tanzania (Primary & Secondary Schools)",
     version="1.0.0",
     docs_url="/docs",
@@ -55,7 +55,7 @@ app.include_router(api_router, prefix="/api/v1")
 def root_status():
     return {
         "status": "online",
-        "service": "ShuleConnect Backend API",
+        "service": "ShuleHub Backend API",
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
         "docs": "/docs",
@@ -66,7 +66,7 @@ def root_status():
 def health_check():
     return {
         "status": "healthy",
-        "service": "ShuleConnect Backend API",
+        "service": "ShuleHub Backend API",
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
     }

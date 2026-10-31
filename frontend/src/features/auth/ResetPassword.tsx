@@ -77,7 +77,7 @@ export const ResetPassword: React.FC = () => {
             S
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">
-            Shule<span className="text-brand-teal">Connect</span>
+            Shule<span className="text-brand-teal">Hub</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
             {t('Set New Secure Password', 'Weka Nenosiri Jipya Salama')}
@@ -191,8 +191,8 @@ export const ResetPassword: React.FC = () => {
                 </h3>
                 <p className="text-xs text-slate-600 mt-2 leading-relaxed">
                   {t(
-                    'Your password has been successfully updated. You can now securely sign in to your ShuleConnect account.',
-                    'Nenosiri lako limebadilishwa kwa ufanisi. Sasa unaweza kuingia kwenye akaunti yako ya ShuleConnect.'
+                    'Your password has been successfully updated. You can now securely sign in to your ShuleHub account.',
+                    'Nenosiri lako limebadilishwa kwa ufanisi. Sasa unaweza kuingia kwenye akaunti yako ya ShuleHub.'
                   )}
                 </p>
               </div>

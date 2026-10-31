@@ -13,7 +13,7 @@ export const Navbar: React.FC = () => {
         </div>
         <div>
           <span className="font-bold text-lg tracking-tight text-white flex items-center gap-1.5">
-            Shule<span className="text-brand-teal">Connect</span>
+            Shule<span className="text-brand-teal">Hub</span>
           </span>
           {user?.school_name && (
             <span className="text-xs text-slate-400 block -mt-1 font-medium truncate max-w-[200px] md:max-w-xs">

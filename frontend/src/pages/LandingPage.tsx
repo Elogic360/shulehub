@@ -48,21 +48,21 @@ export const LandingPage: React.FC = () => {
   const faqItems = [
     {
       id: 'faq-1',
-      question: 'What is ShuleConnect?',
+      question: 'What is ShuleHub?',
       answer:
-        'ShuleConnect is a specialized education communication and parent-engagement SaaS engineered specifically for primary and secondary schools in Tanzania. It centralizes student records, class teacher workflows, multi-subject examination releases, school fee reminders, and parent announcements through reliable Bulk SMS and interactive USSD.',
+        'ShuleHub is a specialized education communication and parent-engagement SaaS engineered specifically for primary and secondary schools in Tanzania. It centralizes student records, class teacher workflows, multi-subject examination releases, school fee reminders, and parent announcements through reliable Bulk SMS and interactive USSD.',
     },
     {
       id: 'faq-2',
-      question: 'Which schools can use ShuleConnect?',
+      question: 'Which schools can use ShuleHub?',
       answer:
-        'ShuleConnect natively supports both Tanzanian private primary schools (Standard 1 to 6/7) and secondary schools (Form 1 to 4/6). Schools with combined primary and secondary branches can easily configure academic levels, class streams (e.g. Standard 3A, Form 2B), and subject teachers.',
+        'ShuleHub natively supports both Tanzanian private primary schools (Standard 1 to 6/7) and secondary schools (Form 1 to 4/6). Schools with combined primary and secondary branches can easily configure academic levels, class streams (e.g. Standard 3A, Form 2B), and subject teachers.',
     },
     {
       id: 'faq-3',
       question: 'Do parents need smartphones or internet connections?',
       answer:
-        'No. Parents do not need smartphones or data plans to stay informed. ShuleConnect dispatches announcements, attendance updates, and fee reminders directly to standard mobile phones via telecom SMS. Parents can also dial the interactive USSD code (*384*55#) on any basic feature phone to view grades and fee balances.',
+        'No. Parents do not need smartphones or data plans to stay informed. ShuleHub dispatches announcements, attendance updates, and fee reminders directly to standard mobile phones via telecom SMS. Parents can also dial the interactive USSD code (*384*57567#) on any basic feature phone to view grades and fee balances.',
     },
     {
       id: 'faq-4',
@@ -84,7 +84,7 @@ export const LandingPage: React.FC = () => {
     },
     {
       id: 'faq-7',
-      question: 'Can ShuleConnect send automated fee reminders?',
+      question: 'Can ShuleHub send automated fee reminders?',
       answer:
         'Yes. The system tracks fee schedules, invoices, and payment receipts. Background automation (powered by Celery Beat) monitors outstanding balances and dispatches polite, scheduled reminders to guardians as payment deadlines approach, with financial reconciliation discrepancy detection.',
     },
@@ -96,15 +96,15 @@ export const LandingPage: React.FC = () => {
     },
     {
       id: 'faq-9',
-      question: 'Does ShuleConnect support USSD access for parents?',
+      question: 'Does ShuleHub support USSD access for parents?',
       answer:
-        'Yes. Parents dial the provisioned USSD shortcode (*384*55#). If a parent has children across different schools, the system deterministically routes them to their chosen school, requires a 6-digit cryptographic SMS OTP before revealing sensitive academic marks, and displays verified fee balances.',
+        'Yes. Parents dial the provisioned USSD shortcode (*384*57567#). If a parent has children across different schools, the system deterministically routes them to their chosen school, requires a 6-digit cryptographic SMS OTP before revealing sensitive academic marks, and displays verified fee balances.',
     },
     {
       id: 'faq-10',
       question: 'How can our school get started today?',
       answer:
-        'Click the "Get Started" or "Register Your School" button to request an onboarding link from the ShuleConnect administration team. Our team verifies your school registration and provides direct access to start enrolling classes within minutes.',
+        'Click the "Get Started" or "Register Your School" button to request an onboarding link from the ShuleHub administration team. Our team verifies your school registration and provides direct access to start enrolling classes within minutes.',
     },
   ];
 
@@ -269,7 +269,7 @@ export const LandingPage: React.FC = () => {
             </h1>
 
             <p className="text-lg sm:text-xl text-brand-textSecondary max-w-3xl mx-auto leading-relaxed">
-              ShuleConnect helps primary and secondary schools in Tanzania manage student information, share
+              ShuleHub helps primary and secondary schools in Tanzania manage student information, share
               examination updates, send announcements, and communicate fee reminders through one simple platform
               powered by SMS and USSD.
             </p>
@@ -323,7 +323,7 @@ export const LandingPage: React.FC = () => {
                   <div className="w-3 h-3 rounded-full bg-amber-500/80" />
                   <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
                   <span className="ml-3 text-xs font-mono text-slate-400 font-medium hidden sm:inline">
-                    https://shuleconnect.co.tz/owner/dashboard
+                    https://shulehub.co.tz/owner/dashboard
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -394,8 +394,8 @@ export const LandingPage: React.FC = () => {
                       <span className="text-emerald-400">Delivered</span>
                     </div>
                     <p className="text-xs text-slate-400 bg-slate-900/80 p-3 rounded-lg border border-slate-800 leading-relaxed font-mono">
-                      "Dear Parent, Standard 4 Mid-Term Results are released. Dial *384*55# or view confidential card:
-                      shuleconnect.co.tz/r/x91k"
+                      "Dear Parent, Standard 4 Mid-Term Results are released. Dial *384*57567# or view confidential card:
+                      shulehub.co.tz/r/x91k"
                     </p>
                   </div>
                   <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 space-y-2">
@@ -799,7 +799,7 @@ export const LandingPage: React.FC = () => {
           <div className="text-center max-w-3xl mx-auto space-y-4">
             <Badge variant="teal">Interactive Demonstration</Badge>
             <h2 className="text-3xl sm:text-4xl font-black text-brand-navy tracking-tight">
-              Experience the Real ShuleConnect Interface
+              Experience the Real ShuleHub Interface
             </h2>
             <p className="text-base text-slate-600">
               Click through the tabs below to explore our role-based dashboards and communication workflows.
@@ -974,7 +974,7 @@ export const LandingPage: React.FC = () => {
               Reliable Delivery Across Every Network
             </h2>
             <p className="text-sm sm:text-base text-slate-300">
-              How ShuleConnect guarantees communication reaching parents on Vodacom, Airtel, Tigo, Halotel, and TTCL.
+              How ShuleHub guarantees communication reaching parents on Vodacom, Airtel, Tigo, Halotel, and TTCL.
             </p>
           </div>
 
@@ -1201,10 +1201,10 @@ export const LandingPage: React.FC = () => {
           <div className="text-center space-y-4">
             <Badge variant="teal">Frequently Asked Questions</Badge>
             <h2 className="text-3xl sm:text-4xl font-black text-brand-navy tracking-tight">
-              Everything You Need to Know About ShuleConnect
+              Everything You Need to Know About ShuleHub
             </h2>
             <p className="text-base text-slate-600">
-              Clear, transparent answers about how ShuleConnect operates in Tanzanian schools.
+              Clear, transparent answers about how ShuleHub operates in Tanzanian schools.
             </p>
           </div>
 
@@ -1220,7 +1220,7 @@ export const LandingPage: React.FC = () => {
             Bring Your School and Parents Closer Together.
           </h2>
           <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Start building stronger communication between your school, teachers, and families with ShuleConnect.
+            Start building stronger communication between your school, teachers, and families with ShuleHub.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link to="/register-school" className="w-full sm:w-auto">
@@ -1253,7 +1253,7 @@ export const LandingPage: React.FC = () => {
                   S
                 </div>
                 <span className="font-bold text-lg text-white">
-                  Shule<span className="text-brand-teal">Connect</span>
+                  Shule<span className="text-brand-teal">Hub</span>
                 </span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
@@ -1293,7 +1293,7 @@ export const LandingPage: React.FC = () => {
               <ul className="space-y-2">
                 <li><Link to="/login" className="hover:text-white transition">Staff Sign In</Link></li>
                 <li><Link to="/register-school" className="hover:text-white transition">School Registration</Link></li>
-                <li><a href="https://developers.africastalking.com/simulator" target="_blank" rel="noopener noreferrer" className="hover:text-white transition">Africa's Talking USSD (*384*55#)</a></li>
+                <li><a href="https://developers.africastalking.com/simulator" target="_blank" rel="noopener noreferrer" className="hover:text-white transition">Africa's Talking USSD (*384*57567#)</a></li>
                 <li><button onClick={() => scrollTo('faq')} className="hover:text-white transition">Help & FAQ</button></li>
               </ul>
             </div>
@@ -1301,7 +1301,7 @@ export const LandingPage: React.FC = () => {
 
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-[11px]">
             <div>
-              © 2026 ShuleConnect Technologies Ltd. All rights reserved. Tanzania PDPA 2022 compliant.
+              © 2026 ShuleHub Tanzania Ltd. All rights reserved. Tanzania PDPA 2022 compliant.
             </div>
             <div className="flex items-center gap-6">
               <span>Privacy Policy</span>

@@ -165,14 +165,14 @@ export const RegisterSchool: React.FC = () => {
               </span>
               <p>
                 {t(
-                  '1. School onboarding on ShuleConnect is private and invite-only.',
+                  '1. School onboarding on ShuleHub is private and invite-only.',
                   '1. Usajili wa shule unafanyika kwa mwaliko maalum pekee.'
                 )}
               </p>
               <p>
                 {t(
-                  '2. Contact ShuleConnect Super Administrators to obtain an official onboarding link.',
-                  '2. Wasiliana na Uongozi Mkuu wa ShuleConnect kupata kiungo rasmi cha usajili.'
+                  '2. Contact ShuleHub Super Administrators to obtain an official onboarding link.',
+                  '2. Wasiliana na Uongozi Mkuu wa ShuleHub kupata kiungo rasmi cha usajili.'
                 )}
               </p>
             </div>
@@ -196,8 +196,8 @@ export const RegisterSchool: React.FC = () => {
                 </span>
                 <span className="text-[11px] text-emerald-700 block mt-0.5">
                   {t(
-                    'You are authorized to register a new school tenant on ShuleConnect.',
-                    'Umeidhinishwa kusajili shule mpya kwenye mfumo wa ShuleConnect.'
+                    'You are authorized to register a new school tenant on ShuleHub.',
+                    'Umeidhinishwa kusajili shule mpya kwenye mfumo wa ShuleHub.'
                   )}
                 </span>
               </div>

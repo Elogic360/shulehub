@@ -216,6 +216,8 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     # Try email lookup
     if "@" in identifier:
         user = db.execute(select(User).where(User.email == identifier.lower())).scalar_one_or_none()
+        if not user and identifier.lower() in ("admin@shulehub.co.tz", "superadmin@shulehub.co.tz"):
+            user = db.execute(select(User).where(User.email == "admin@shuleconnect.co.tz")).scalar_one_or_none()
 
     # Try phone lookup
     if not user:

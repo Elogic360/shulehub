@@ -248,7 +248,7 @@ export const PlatformAdminDashboard: React.FC = () => {
 
                           <a
                             href={`https://wa.me/?text=${encodeURIComponent(
-                              `Habari, tumia kiungo hiki rasmi kusajili shule yako kwenye ShuleConnect: ${inv.invitation_url}`
+                              `Habari, tumia kiungo hiki rasmi kusajili shule yako kwenye ShuleHub: ${inv.invitation_url}`
                             )}`}
                             target="_blank"
                             rel="noopener noreferrer"
